@@ -1,0 +1,14 @@
+# Phase 2-1 데이터 조회 API 의존성
+# 사용: pip install -r requirements_api.txt
+
+# Flask
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Google Sheets API (apply_data_validation.py와 동일)
+google-api-python-client>=2.110.0
+google-auth-oauthlib>=1.2.0
+google-auth-httplib2>=0.2.0
+
+# 환경 변수
+python-dotenv>=1.0.0
