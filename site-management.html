@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>현장배정 관리 시스템</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <header>
+            <h1>🏗️ 현장배정 관리 시스템</h1>
+            <div class="header-info">
+                <span class="year-badge">2026년</span>
+                <span class="site-count">총 <strong id="totalSites">225</strong>개 현장</span>
+            </div>
+        </header>
+
+        <!-- 필터 패널 -->
+        <div class="filter-panel">
+            <div class="filter-group">
+                <label>회사 구분:</label>
+                <button class="filter-btn active" data-company="all">전체</button>
+                <button class="filter-btn" data-company="종합">더존종합건설</button>
+                <button class="filter-btn" data-company="하우징">더존하우징</button>
+            </div>
+            <div class="filter-group">
+                <label>배정 상태:</label>
+                <button class="filter-btn active" data-status="all">전체</button>
+                <button class="filter-btn" data-status="배정완료">배정완료</button>
+                <button class="filter-btn" data-status="미배정">미배정</button>
+            </div>
+            <div class="stats">
+                <span class="stat-item">✅ 배정: <strong id="assignedCount">0</strong></span>
+                <span class="stat-item">⚠️ 미배정: <strong id="unassignedCount">0</strong></span>
+            </div>
+        </div>
+
+        <!-- 지도 영역 -->
+        <div id="map"></div>
+
+        <!-- 상세정보 패널 (슬라이드업) -->
+        <div id="detailPanel" class="detail-panel">
+            <div class="panel-header">
+                <h3 id="panelTitle">현장 정보</h3>
+                <button id="closePanel" class="close-btn">✕</button>
+            </div>
+            <div class="panel-content">
+                <div class="info-section">
+                    <h4>📍 현장 정보</h4>
+                    <div class="info-row">
+                        <span class="label">현장명:</span>
+                        <span id="siteName" class="value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">회사:</span>
+                        <span id="siteCompany" class="value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">주소:</span>
+                        <span id="siteAddress" class="value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">상태:</span>
+                        <span id="siteStatus" class="value status-tag"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">건축허가일:</span>
+                        <span id="buildingPermitDate" class="value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">착공예정일:</span>
+                        <span id="siteStartDate" class="value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">준공일:</span>
+                        <span id="completionDate" class="value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">특이사항:</span>
+                        <span id="specialNotes" class="value"></span>
+                    </div>
+                    <div class="info-row file-row">
+                        <span class="label">준공필증:</span>
+                        <div id="completionCert" class="value file-area">
+                            <span class="no-file">미등록</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h4>👷 담당 소장</h4>
+                    <div class="info-row" id="managerRow">
+                        <span class="label">소장:</span>
+                        <span id="managerName" class="value"></span>
+                    </div>
+                    <div class="info-row" id="managerPhoneRow">
+                        <span class="label">연락처:</span>
+                        <span id="managerPhone" class="value"></span>
+                    </div>
+                    <div class="unassigned-notice" id="noManagerNotice" style="display: none;">
+                        <p>⚠️ 담당 소장 미배정</p>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h4>📜 사용 자격증</h4>
+                    <div class="info-row" id="certRow">
+                        <span class="label">자격증:</span>
+                        <span id="certName" class="value"></span>
+                    </div>
+                    <div class="info-row" id="certOwnerRow">
+                        <span class="label">소유자:</span>
+                        <span id="certOwner" class="value"></span>
+                    </div>
+                    <div class="info-row" id="certPhoneRow">
+                        <span class="label">연락처:</span>
+                        <span id="certPhone" class="value"></span>
+                    </div>
+                    <div class="unassigned-notice" id="noCertNotice" style="display: none;">
+                        <p>⚠️ 자격증 미배정</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 리스트 뷰 토글 버튼 -->
+        <button id="toggleListView" class="floating-btn">📋</button>
+
+        <!-- 리스트 뷰 패널 -->
+        <div id="listViewPanel" class="list-view-panel">
+            <div class="panel-header">
+                <h3>현장 목록</h3>
+                <button id="closeListView" class="close-btn">✕</button>
+            </div>
+            <div class="list-content">
+                <table id="siteTable">
+                    <thead>
+                        <tr>
+                            <th>현장명</th>
+                            <th>회사</th>
+                            <th>착공예정</th>
+                            <th>소장</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody id="siteTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_MAP_API_KEY"></script>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
