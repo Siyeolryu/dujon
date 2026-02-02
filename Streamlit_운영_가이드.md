@@ -64,15 +64,29 @@ API_BASE_URL=http://localhost:5000
 
 ---
 
-## 4. 배포 옵션
+## 4. GitHub / Streamlit Cloud 배포 시 Main file path
 
-- **Streamlit Cloud**: 레포에 `app_streamlit.py`와 `pages/`를 올린 뒤 Streamlit Cloud에서 앱 연결. `API_BASE_URL`만 배포된 Flask API URL로 설정.
+배포 설정에서 **Main file path**를 다음 중 하나로 지정하세요 (저장소 루트 기준).
+
+| Main file path | 설명 |
+|----------------|------|
+| **`app_streamlit.py`** | 메인 진입점 (권장) |
+| **`streamlit_app.py`** | 동일 앱, Cloud에서 기본으로 찾는 이름 |
+
+- **Requirements file**: `requirements_streamlit.txt` (또는 루트의 `requirements.txt` 사용 가능)
+- **Branch**: `main` (또는 사용 중인 기본 브랜치)
+
+---
+
+## 5. 배포 옵션
+
+- **Streamlit Cloud**: 레포에 `app_streamlit.py`(또는 `streamlit_app.py`)와 `pages/`를 올린 뒤 Streamlit Cloud에서 앱 연결. Main file path를 위 표대로 입력. `API_BASE_URL`만 배포된 Flask API URL로 설정.
 - **Docker**: Streamlit 전용 Dockerfile에서 `streamlit run app_streamlit.py` 실행. Flask API는 별도 컨테이너 또는 서비스로 운영.
 - **단일 서버**: 같은 서버에서 Flask(5000) + Streamlit(8501) 동시 실행 후, Nginx 등으로 경로 분리(예: `/` → Streamlit, `/api` → Flask).
 
 ---
 
-## 5. 기존 HTML 웹 UI와의 관계
+## 6. 기존 HTML 웹 UI와의 관계
 
 - **Streamlit**: 대시보드·목록·등록 폼 위주. 빠른 운영·배포용.
 - **기존 HTML** (지도, AG-Grid 스타일 테이블 등): Flask 서버의 `http://localhost:5000/` 에서 그대로 사용 가능.
@@ -80,7 +94,7 @@ API_BASE_URL=http://localhost:5000
 
 ---
 
-## 6. 문제 해결
+## 7. 문제 해결
 
 | 현상 | 확인 사항 |
 |------|-----------|
