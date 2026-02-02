@@ -4,156 +4,384 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>현장배정 관리 시스템</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/assign-panel.css">
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=797d955e0a50c6f827d5bfe3ab6ee26e&autoload=false"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- 헤더 -->
-        <header>
-            <h1>🏗️ 현장배정 관리 시스템</h1>
-            <div class="header-info">
-                <span class="year-badge">2026년</span>
-                <span class="site-count">총 <strong id="totalSites">225</strong>개 현장</span>
-            </div>
-        </header>
+    <header class="app-header">
+        <h1>🏗️ 현장배정 관리 시스템</h1>
+        <div class="header-actions">
+            <span id="serverStatus" class="status-indicator">●</span>
+            <span id="lastUpdated" class="last-updated">-</span>
+        </div>
+    </header>
 
-        <!-- 필터 패널 -->
-        <div class="filter-panel">
-            <div class="filter-group">
-                <label>회사 구분:</label>
-                <button class="filter-btn active" data-company="all">전체</button>
-                <button class="filter-btn" data-company="종합">더존종합건설</button>
-                <button class="filter-btn" data-company="하우징">더존하우징</button>
+    <nav class="tab-nav" role="tablist">
+        <button type="button" class="tab-btn active" data-tab="tab-site-list" role="tab" aria-selected="true">현장 목록</button>
+        <button type="button" class="tab-btn" data-tab="tab-site-register" role="tab" aria-selected="false">현장등록</button>
+        <button type="button" class="tab-btn" data-tab="tab-cert-register" role="tab" aria-selected="false">자격증등록</button>
+    </nav>
+
+    <div id="tab-site-list" class="tab-panel active" role="tabpanel">
+    <section id="dashboard" class="dashboard-section">
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card" id="statTotalSites">
+                <div class="stat-number skeleton-number" data-skeleton>-</div>
+                <div class="stat-label">전체 현장</div>
             </div>
-            <div class="filter-group">
-                <label>배정 상태:</label>
-                <button class="filter-btn active" data-status="all">전체</button>
-                <button class="filter-btn" data-status="배정완료">배정완료</button>
-                <button class="filter-btn" data-status="미배정">미배정</button>
+            <div class="stat-card stat-danger" id="statUnassigned">
+                <div class="stat-number skeleton-number" data-skeleton>-</div>
+                <div class="stat-label">미배정 현장</div>
             </div>
-            <div class="stats">
-                <span class="stat-item">✅ 배정: <strong id="assignedCount">0</strong></span>
-                <span class="stat-item">⚠️ 미배정: <strong id="unassignedCount">0</strong></span>
+            <div class="stat-card stat-success" id="statAssigned">
+                <div class="stat-number skeleton-number" data-skeleton>-</div>
+                <div class="stat-label">배정완료</div>
+            </div>
+            <div class="stat-card stat-info" id="statAvailablePersonnel">
+                <div class="stat-number skeleton-number" data-skeleton>-</div>
+                <div class="stat-label">투입가능 인력</div>
+            </div>
+            <div class="stat-card stat-warning" id="statAvailableCerts">
+                <div class="stat-number skeleton-number" data-skeleton>-</div>
+                <div class="stat-label">사용가능 자격증</div>
             </div>
         </div>
+        <div class="chart-section" id="chartSection">
+            <h4>배정 현황</h4>
+            <div class="chart-svg-wrap" id="chartSvgWrap" aria-hidden="true"></div>
+        </div>
+    </section>
 
-        <!-- 지도 영역 -->
-        <div id="map"></div>
+    <section id="filterBar" class="filter-section">
+        <div class="filter-group">
+            <label>회사</label>
+            <select id="filterCompany" class="filter-select">
+                <option value="all">전체</option>
+                <option value="종합건설">종합건설</option>
+                <option value="하우징">하우징</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>배정상태</label>
+            <select id="filterStatus" class="filter-select">
+                <option value="all">전체</option>
+                <option value="배정완료">배정완료</option>
+                <option value="미배정">미배정</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>현장상태</label>
+            <select id="filterState" class="filter-select">
+                <option value="all">전체</option>
+                <option value="건축허가">건축허가</option>
+                <option value="착공예정">착공예정</option>
+                <option value="착공중">착공중</option>
+                <option value="준공">준공</option>
+            </select>
+        </div>
+        <div class="filter-group search-group">
+            <input type="text" id="searchInput" placeholder="현장명·주소 검색..." />
+            <button id="searchBtn" class="search-btn">🔍</button>
+        </div>
+        <button id="resetFilter" class="reset-btn">초기화</button>
+    </section>
 
-        <!-- 상세정보 패널 (슬라이드업) -->
-        <div id="detailPanel" class="detail-panel">
-            <div class="panel-header">
-                <h3 id="panelTitle">현장 정보</h3>
-                <button id="closePanel" class="close-btn">✕</button>
+    <main class="main-content">
+        <div class="content-layout">
+            <div id="mapContainer" class="map-area"></div>
+            <section id="siteList" class="site-list-section">
+                <div class="list-header">
+                    <h3>현장 목록 <span id="siteCount" class="count-badge">0</span></h3>
+                    <div class="sort-options">
+                        <select id="sortBy">
+                            <option value="name">현장명순</option>
+                            <option value="status">배정상태순</option>
+                            <option value="state">현장상태순</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="siteListContainer" class="list-container">
+                    <div class="skeleton-list" id="skeletonList" aria-hidden="true"></div>
+                    <div class="site-table-wrap hidden" id="siteTableWrap">
+                        <table class="site-table" id="siteTable">
+                            <thead>
+                                <tr>
+                                    <th>현장명</th>
+                                    <th>회사</th>
+                                    <th>배정상태</th>
+                                    <th>현장상태</th>
+                                    <th>담당</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="siteTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state hidden" id="siteListEmpty"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+    </div>
+
+    <div id="tab-site-register" class="tab-panel" role="tabpanel" hidden>
+        <section class="register-section">
+            <h2 class="register-title">현장 등록</h2>
+            <p class="register-desc">현장ID는 자동 부여됩니다.</p>
+            <form id="formSiteRegister" class="register-form">
+                <div class="form-grid">
+                    <div class="form-group required">
+                        <label for="newSiteName">현장명</label>
+                        <input type="text" id="newSiteName" required placeholder="현장명 입력" />
+                    </div>
+                    <div class="form-group">
+                        <label for="newOwnerName">건축주 명</label>
+                        <input type="text" id="newOwnerName" placeholder="건축주 성명 입력" />
+                    </div>
+                    <div class="form-group required">
+                        <label for="newCompany">회사구분</label>
+                        <select id="newCompany" required>
+                            <option value="">선택</option>
+                            <option value="더존종합건설">종합건설</option>
+                            <option value="더존하우징">하우징</option>
+                        </select>
+                    </div>
+                    <div class="form-group required full-width">
+                        <label for="newAddress">주소</label>
+                        <input type="text" id="newAddress" required placeholder="주소 입력" />
+                    </div>
+                    <div class="form-group">
+                        <label for="newPermitDate">건축허가일</label>
+                        <input type="text" id="newPermitDate" placeholder="YYYY-MM-DD" />
+                    </div>
+                    <div class="form-group">
+                        <label for="newStartDate">착공예정일</label>
+                        <input type="text" id="newStartDate" placeholder="YYYY-MM-DD" />
+                    </div>
+                    <div class="form-group">
+                        <label for="newCompletionDate">준공일</label>
+                        <input type="text" id="newCompletionDate" placeholder="YYYY-MM-DD" />
+                    </div>
+                    <div class="form-group">
+                        <label for="newState">현장상태</label>
+                        <select id="newState">
+                            <option value="건축허가">건축허가</option>
+                            <option value="착공예정">착공예정</option>
+                            <option value="착공중">착공중</option>
+                            <option value="준공">준공</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="newNotes">특이사항</label>
+                        <textarea id="newNotes" rows="3" placeholder="특이사항 입력"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="action-btn primary">등록</button>
+                    <button type="reset" class="action-btn secondary">초기화</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div id="tab-cert-register" class="tab-panel" role="tabpanel" hidden>
+        <section class="register-section">
+            <h2 class="register-title">자격증 등록</h2>
+            <p class="register-desc">자격증 종류를 탭에서 선택한 뒤, 소유자 정보를 입력하세요. (자격증ID·소유자ID 자동 부여)</p>
+            <div class="cert-type-tabs" role="tablist">
+                <button type="button" class="cert-type-btn active" data-cert-type="건설초급" role="tab" aria-selected="true">건설초급</button>
+                <button type="button" class="cert-type-btn" data-cert-type="건설중급" role="tab" aria-selected="false">건설중급</button>
+                <button type="button" class="cert-type-btn" data-cert-type="건설고급" role="tab" aria-selected="false">건설고급</button>
+                <button type="button" class="cert-type-btn" data-cert-type="건설특급" role="tab" aria-selected="false">건설특급</button>
+                <button type="button" class="cert-type-btn" data-cert-type="추가등록" role="tab" aria-selected="false">+추가등록</button>
             </div>
-            <div class="panel-content">
-                <div class="info-section">
-                    <h4>📍 현장 정보</h4>
-                    <div class="info-row">
-                        <span class="label">현장명:</span>
-                        <span id="siteName" class="value"></span>
+            <div id="certCustomNameWrap" class="form-group full-width hidden">
+                <label for="newCertCustomName">추가 자격증명</label>
+                <input type="text" id="newCertCustomName" placeholder="자격증명 직접 입력" />
+            </div>
+            <form id="formCertRegister" class="register-form">
+                <div class="form-grid">
+                    <div class="form-group required full-width">
+                        <label for="newCertOwnerName">소유자 명</label>
+                        <input type="text" id="newCertOwnerName" required placeholder="소유자 성명" />
                     </div>
-                    <div class="info-row">
-                        <span class="label">회사:</span>
-                        <span id="siteCompany" class="value"></span>
+                    <div class="form-group full-width">
+                        <label for="newCertOwnerPhone">연락처</label>
+                        <input type="text" id="newCertOwnerPhone" placeholder="연락처" />
                     </div>
-                    <div class="info-row">
-                        <span class="label">주소:</span>
-                        <span id="siteAddress" class="value"></span>
+                    <div class="form-group">
+                        <label for="newCertAvailable">사용여부</label>
+                        <select id="newCertAvailable">
+                            <option value="사용가능">사용가능</option>
+                            <option value="사용중">사용중</option>
+                            <option value="만료">만료</option>
+                        </select>
                     </div>
-                    <div class="info-row">
-                        <span class="label">상태:</span>
-                        <span id="siteStatus" class="value status-tag"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">건축허가일:</span>
-                        <span id="buildingPermitDate" class="value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">착공예정일:</span>
-                        <span id="siteStartDate" class="value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">준공일:</span>
-                        <span id="completionDate" class="value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">특이사항:</span>
-                        <span id="specialNotes" class="value"></span>
-                    </div>
-                    <div class="info-row file-row">
-                        <span class="label">준공필증:</span>
-                        <div id="completionCert" class="value file-area">
-                            <span class="no-file">미등록</span>
-                        </div>
+                    <div class="form-group full-width">
+                        <label for="newCertNotes">비고</label>
+                        <textarea id="newCertNotes" rows="2" placeholder="비고"></textarea>
                     </div>
                 </div>
+                <div class="form-actions">
+                    <button type="submit" class="action-btn primary">등록</button>
+                    <button type="reset" class="action-btn secondary">초기화</button>
+                </div>
+            </form>
+        </section>
+    </div>
 
-                <div class="info-section">
-                    <h4>👷 담당 소장</h4>
-                    <div class="info-row" id="managerRow">
-                        <span class="label">소장:</span>
-                        <span id="managerName" class="value"></span>
-                    </div>
-                    <div class="info-row" id="managerPhoneRow">
-                        <span class="label">연락처:</span>
-                        <span id="managerPhone" class="value"></span>
-                    </div>
-                    <div class="unassigned-notice" id="noManagerNotice" style="display: none;">
-                        <p>⚠️ 담당 소장 미배정</p>
-                    </div>
-                </div>
-
-                <div class="info-section">
-                    <h4>📜 사용 자격증</h4>
-                    <div class="info-row" id="certRow">
-                        <span class="label">자격증:</span>
-                        <span id="certName" class="value"></span>
-                    </div>
-                    <div class="info-row" id="certOwnerRow">
-                        <span class="label">소유자:</span>
-                        <span id="certOwner" class="value"></span>
-                    </div>
-                    <div class="info-row" id="certPhoneRow">
-                        <span class="label">연락처:</span>
-                        <span id="certPhone" class="value"></span>
-                    </div>
-                    <div class="unassigned-notice" id="noCertNotice" style="display: none;">
-                        <p>⚠️ 자격증 미배정</p>
-                    </div>
-                </div>
+    <aside id="siteDetailPanel" class="detail-panel hidden">
+        <div class="panel-header">
+            <h3 id="detailSiteName">-</h3>
+            <button id="closeDetail" class="close-btn">✕</button>
+        </div>
+        <div class="panel-body">
+            <div class="detail-section">
+                <h4>📍 기본 정보</h4>
+                <dl class="detail-list">
+                    <dt>현장ID</dt><dd id="detailSiteId">-</dd>
+                    <dt>회사</dt><dd id="detailCompany">-</dd>
+                    <dt>주소</dt><dd id="detailAddress">-</dd>
+                    <dt>현장상태</dt><dd id="detailState">-</dd>
+                    <dt>건축허가일</dt><dd id="detailPermitDate">-</dd>
+                    <dt>착공예정일</dt><dd id="detailStartDate">-</dd>
+                    <dt>준공일</dt><dd id="detailCompletionDate">-</dd>
+                    <dt>특이사항</dt><dd id="detailNotes">-</dd>
+                </dl>
+            </div>
+            <div class="detail-section">
+                <h4>👷 배정 정보</h4>
+                <div id="detailAssignInfo"></div>
+            </div>
+            <div class="detail-actions">
+                <button id="btnAssign" class="action-btn primary hidden">배정하기</button>
+                <button id="btnUnassign" class="action-btn danger hidden">배정 해제</button>
+                <button id="btnEditSite" class="action-btn secondary">정보 수정</button>
             </div>
         </div>
+    </aside>
 
-        <!-- 리스트 뷰 토글 버튼 -->
-        <button id="toggleListView" class="floating-btn">📋</button>
-
-        <!-- 리스트 뷰 패널 -->
-        <div id="listViewPanel" class="list-view-panel">
-            <div class="panel-header">
-                <h3>현장 목록</h3>
-                <button id="closeListView" class="close-btn">✕</button>
+    <aside id="assignPanel" class="assign-panel hidden">
+        <div class="panel-header">
+            <h3>👷 소장 배정</h3>
+            <button id="closeAssign" class="close-btn">✕</button>
+        </div>
+        <div class="panel-body">
+            <div class="assign-target">
+                <span class="label">대상 현장</span>
+                <strong id="assignTargetSite">-</strong>
+                <span id="assignTargetAddress" class="sub-text">-</span>
             </div>
-            <div class="list-content">
-                <table id="siteTable">
-                    <thead>
-                        <tr>
-                            <th>현장명</th>
-                            <th>회사</th>
-                            <th>착공예정</th>
-                            <th>소장</th>
-                            <th>상태</th>
-                        </tr>
-                    </thead>
-                    <tbody id="siteTableBody">
-                    </tbody>
-                </table>
+            <hr />
+            <div class="assign-section">
+                <h4>1. 소장 선택</h4>
+                <select id="managerSelect" class="form-select">
+                    <option value="">-- 투입가능 소장 목록 --</option>
+                </select>
+                <div id="managerPreview" class="preview-card hidden"></div>
+            </div>
+            <div class="assign-section">
+                <h4>2. 자격증 선택</h4>
+                <select id="certificateSelect" class="form-select">
+                    <option value="">-- 사용가능 자격증 목록 --</option>
+                </select>
+                <div id="certPreview" class="preview-card hidden"></div>
+            </div>
+            <div class="assign-notice">
+                <p>💡 소장과 자격증을 모두 선택한 후 배정 확인을 눌러주세요.</p>
+                <p>⚠️ 자격증은 한 현장에만 사용할 수 있습니다.</p>
+            </div>
+            <div class="assign-actions">
+                <button id="btnCancelAssign" class="action-btn secondary">취소</button>
+                <button id="btnConfirmAssign" class="action-btn primary" disabled>배정 확인</button>
+            </div>
+        </div>
+    </aside>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="modalOverlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modalTitle">-</h3>
+            <div id="modalBody">-</div>
+            <div class="modal-actions">
+                <button id="modalCancel" class="action-btn secondary">취소</button>
+                <button id="modalConfirm" class="action-btn primary">확인</button>
             </div>
         </div>
     </div>
 
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_MAP_API_KEY"></script>
-    <script src="data.js"></script>
-    <script src="app.js"></script>
+    <div id="editSiteOverlay" class="modal-overlay hidden">
+        <div class="modal-content edit-site-modal">
+            <h3 id="editSiteTitle">현장 정보 수정</h3>
+            <form id="editSiteForm" class="edit-site-form">
+                <input type="hidden" id="editSiteId" />
+                <div class="form-row">
+                    <label for="editSiteName">현장명</label>
+                    <input type="text" id="editSiteName" required />
+                </div>
+                <div class="form-row">
+                    <label for="editAddress">주소</label>
+                    <input type="text" id="editAddress" />
+                </div>
+                <div class="form-row">
+                    <label for="editLat">위도</label>
+                    <input type="text" id="editLat" placeholder="예: 37.0" />
+                </div>
+                <div class="form-row">
+                    <label for="editLng">경도</label>
+                    <input type="text" id="editLng" placeholder="예: 127.0" />
+                </div>
+                <div class="form-row">
+                    <label for="editPermitDate">건축허가일</label>
+                    <input type="text" id="editPermitDate" placeholder="YYYY-MM-DD" />
+                </div>
+                <div class="form-row">
+                    <label for="editStartDate">착공예정일</label>
+                    <input type="text" id="editStartDate" placeholder="YYYY-MM-DD" />
+                </div>
+                <div class="form-row">
+                    <label for="editCompletionDate">준공일</label>
+                    <input type="text" id="editCompletionDate" placeholder="YYYY-MM-DD" />
+                </div>
+                <div class="form-row">
+                    <label for="editState">현장상태</label>
+                    <select id="editState">
+                        <option value="건축허가">건축허가</option>
+                        <option value="착공예정">착공예정</option>
+                        <option value="착공중">착공중</option>
+                        <option value="준공">준공</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="editNotes">특이사항</label>
+                    <textarea id="editNotes" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="editSiteCancel" class="action-btn secondary">취소</button>
+                    <button type="submit" id="editSiteSave" class="action-btn primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4단계 배포 시: 아래 한 줄 추가 후 config.js 로드 시 API URL 사용 -->
+    <!-- <script>window.__API_BASE_URL__ = 'https://your-api-domain.com/api';</script> -->
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/filter.js"></script>
+    <script src="js/site-detail.js"></script>
+    <script src="js/assign.js"></script>
+    <script src="js/tabs.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

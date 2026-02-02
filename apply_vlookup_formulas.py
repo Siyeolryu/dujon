@@ -16,17 +16,7 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
-try:
-    from google.oauth2.credentials import Credentials
-    from google_auth_oauthlib.flow import InstalledAppFlow
-    from google.auth.transport.requests import Request
-    from googleapiclient.discovery import build
-    import pickle
-except ImportError:
-    print("❌ 필요한 패키지가 설치되지 않았습니다.")
-    print("pip install google-api-python-client google-auth-oauthlib google-auth-httplib2")
-    sys.exit(1)
-
+# Google API는 get_google_sheets_service() 호출 시 지연 import (테스트 시 모듈 로드만으로 통과 가능)
 SPREADSHEET_ID = os.getenv('SPREADSHEET_ID', '15fAEzkC9FCLA6sG1N--f69r-32WHoYLvmXcwED5xWzM')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -43,6 +33,17 @@ COLUMNS_TO_ADD = [
 
 def get_google_sheets_service():
     """Google Sheets API 서비스 생성"""
+    try:
+        from google.oauth2.credentials import Credentials
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from google.auth.transport.requests import Request
+        from googleapiclient.discovery import build
+        import pickle
+    except ImportError:
+        print("❌ 필요한 패키지가 설치되지 않았습니다.")
+        print("pip install google-api-python-client google-auth-oauthlib google-auth-httplib2")
+        sys.exit(1)
+
     creds = None
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:

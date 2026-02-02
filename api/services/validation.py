@@ -44,6 +44,32 @@ def validate_site_data(data, is_update=False):
     return True
 
 
+def validate_certificate_data(data, is_update=False):
+    """자격증 데이터 검증 (Google Sheets 자격증풀 저장용)"""
+    errors = []
+
+    if not is_update:
+        required = ['자격증명', '소유자명']
+        for field in required:
+            if field not in data or not str(data.get(field, '')).strip():
+                errors.append(f'{field}는 필수 입력 항목입니다')
+
+    if '사용가능여부' in data and data['사용가능여부']:
+        if data['사용가능여부'] not in ('사용가능', '사용중'):
+            errors.append('사용가능여부는 "사용가능" 또는 "사용중"이어야 합니다')
+
+    for field in ('취득일', '유효기간'):
+        if field in data and data.get(field):
+            try:
+                datetime.strptime(str(data[field]).strip()[:10], '%Y-%m-%d')
+            except ValueError:
+                errors.append(f'{field}는 YYYY-MM-DD 형식이어야 합니다')
+
+    if errors:
+        raise ValidationError('; '.join(errors))
+    return True
+
+
 def validate_assignment(site, manager, certificate):
     """배정 가능 여부 검증"""
     errors = []

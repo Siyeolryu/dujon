@@ -1,13 +1,26 @@
 """
 현장 관련 API 라우트 (GET / POST / PUT)
 """
+import uuid
 from datetime import datetime
 from flask import Blueprint, jsonify, request
-from api.services.sheets_service import sheets_service
+from api.services.sheets_service import (
+    sheets_service,
+    SHEET_SITES,
+    SHEET_PERSONNEL,
+    SHEET_CERTIFICATES,
+)
 from api.services.validation import validate_site_data, validate_assignment, ValidationError
 from api.services.sync_manager import get_sync_manager, ConflictError
 
 bp = Blueprint('sites', __name__)
+
+
+def _generate_site_id():
+    """현장ID 자동 부여 (중복 방지)"""
+    ts = datetime.now().strftime('%Y%m%d%H%M%S')
+    short = uuid.uuid4().hex[:6].upper()
+    return f'SITE-{ts}-{short}'
 
 
 @bp.route('/sites', methods=['GET'])
@@ -120,6 +133,20 @@ def create_site():
     """현장 생성"""
     try:
         data = request.json or {}
+        required = ['현장명', '회사구분', '주소']
+        for field in required:
+            if field not in data or not str(data.get(field, '')).strip():
+                return jsonify({
+                    'success': False,
+                    'error': {'code': 'MISSING_FIELD', 'message': f'{field}는 필수 입력 항목입니다'},
+                }), 400
+
+        # 현장ID 미제공 시 자동 부여
+        if not data.get('현장ID') or not str(data.get('현장ID', '')).strip():
+            data['현장ID'] = _generate_site_id()
+            while sheets_service.get_site_by_id(data['현장ID']):
+                data['현장ID'] = _generate_site_id()
+
         try:
             validate_site_data(data, is_update=False)
         except ValidationError as e:
@@ -127,14 +154,6 @@ def create_site():
                 'success': False,
                 'error': {'code': 'VALIDATION_ERROR', 'message': str(e)},
             }), 400
-
-        required = ['현장ID', '현장명', '회사구분', '주소']
-        for field in required:
-            if field not in data or not str(data.get(field, '')).strip():
-                return jsonify({
-                    'success': False,
-                    'error': {'code': 'MISSING_FIELD', 'message': f'{field}는 필수 입력 항목입니다'},
-                }), 400
 
         if sheets_service.get_site_by_id(data['현장ID']):
             return jsonify({
@@ -146,6 +165,7 @@ def create_site():
         row_data = [
             data['현장ID'],
             data['현장명'],
+            data.get('건축주명', ''),
             data['회사구분'],
             data['주소'],
             data.get('위도', ''),
@@ -167,7 +187,7 @@ def create_site():
             now,
             now,
         ]
-        sheets_service.append_row('시트1', row_data)
+        sheets_service.append_row(SHEET_SITES, row_data)
 
         return jsonify({
             'success': True,
@@ -193,7 +213,7 @@ def update_site(site_id):
                 'error': {'code': 'SITE_NOT_FOUND', 'message': f'현장ID {site_id}를 찾을 수 없습니다'},
             }), 404
 
-        row_num = sheets_service.find_row_by_id('시트1', site_id)
+        row_num = sheets_service.find_row_by_id(SHEET_SITES, site_id)
         if not row_num:
             return jsonify({
                 'success': False,
@@ -219,21 +239,21 @@ def update_site(site_id):
                 'error': {'code': 'VALIDATION_ERROR', 'message': str(e)},
             }), 400
 
-        # 22컬럼 기준: A~V
+        # 23컬럼 기준: A=현장ID, B=현장명, C=건축주명, D~W
         column_map = {
-            '현장명': 'B', '주소': 'D', '위도': 'E', '경도': 'F',
-            '건축허가일': 'G', '착공예정일': 'H', '준공일': 'I',
-            '현장상태': 'J', '특이사항': 'K', '담당소장ID': 'L',
-            '사용자격증ID': 'O', '준공필증파일URL': 'S', '배정상태': 'T',
+            '현장명': 'B', '건축주명': 'C', '회사구분': 'D', '주소': 'E', '위도': 'F', '경도': 'G',
+            '건축허가일': 'H', '착공예정일': 'I', '준공일': 'J',
+            '현장상태': 'K', '특이사항': 'L', '담당소장ID': 'M',
+            '사용자격증ID': 'P', '준공필증파일URL': 'T', '배정상태': 'U',
         }
         updates = []
         for field, col in column_map.items():
             if field in data:
                 val = data[field]
-                updates.append({'range': f'시트1!{col}{row_num}', 'values': [[val]]})
+                updates.append({'range': f'{SHEET_SITES}!{col}{row_num}', 'values': [[val]]})
 
         now = datetime.now().strftime('%Y-%m-%d')
-        updates.append({'range': f'시트1!V{row_num}', 'values': [[now]]})
+        updates.append({'range': f'{SHEET_SITES}!W{row_num}', 'values': [[now]]})
 
         if updates:
             sheets_service.batch_update(updates)
@@ -316,9 +336,9 @@ def assign_manager(site_id):
                 'error': {'code': 'CONFLICT', 'message': str(e)},
             }), 409
 
-        site_row = sheets_service.find_row_by_id('시트1', site_id)
-        manager_row = sheets_service.find_row_by_id('시트2', manager_id)
-        cert_row = sheets_service.find_row_by_id('시트3', certificate_id)
+        site_row = sheets_service.find_row_by_id(SHEET_SITES, site_id)
+        manager_row = sheets_service.find_row_by_id(SHEET_PERSONNEL, manager_id)
+        cert_row = sheets_service.find_row_by_id(SHEET_CERTIFICATES, certificate_id)
         if not site_row or not manager_row or not cert_row:
             return jsonify({
                 'success': False,
@@ -327,14 +347,14 @@ def assign_manager(site_id):
 
         now = datetime.now().strftime('%Y-%m-%d')
         updates = [
-            {'range': f'시트1!L{site_row}', 'values': [[manager_id]]},
-            {'range': f'시트1!O{site_row}', 'values': [[certificate_id]]},
-            {'range': f'시트1!T{site_row}', 'values': [['배정완료']]},
-            {'range': f'시트1!V{site_row}', 'values': [[now]]},
-            {'range': f'시트2!I{manager_row}', 'values': [[int(manager.get('현재담당현장수') or 0) + 1]]},
-            {'range': f'시트2!H{manager_row}', 'values': [['투입중']]},
-            {'range': f'시트3!J{cert_row}', 'values': [['사용중']]},
-            {'range': f'시트3!K{cert_row}', 'values': [[site_id]]},
+            {'range': f'{SHEET_SITES}!M{site_row}', 'values': [[manager_id]]},
+            {'range': f'{SHEET_SITES}!P{site_row}', 'values': [[certificate_id]]},
+            {'range': f'{SHEET_SITES}!U{site_row}', 'values': [['배정완료']]},
+            {'range': f'{SHEET_SITES}!W{site_row}', 'values': [[now]]},
+            {'range': f'{SHEET_PERSONNEL}!I{manager_row}', 'values': [[int(manager.get('현재담당현장수') or 0) + 1]]},
+            {'range': f'{SHEET_PERSONNEL}!H{manager_row}', 'values': [['투입중']]},
+            {'range': f'{SHEET_CERTIFICATES}!J{cert_row}', 'values': [['사용중']]},
+            {'range': f'{SHEET_CERTIFICATES}!K{cert_row}', 'values': [[site_id]]},
         ]
         sheets_service.batch_update(updates)
 
@@ -395,23 +415,23 @@ def unassign_manager(site_id):
         cert_id = site.get('사용자격증ID') or ''
         manager = sheets_service.get_personnel_by_id(manager_id)
 
-        site_row = sheets_service.find_row_by_id('시트1', site_id)
-        manager_row = sheets_service.find_row_by_id('시트2', manager_id)
-        cert_row = sheets_service.find_row_by_id('시트3', cert_id) if cert_id else None
+        site_row = sheets_service.find_row_by_id(SHEET_SITES, site_id)
+        manager_row = sheets_service.find_row_by_id(SHEET_PERSONNEL, manager_id)
+        cert_row = sheets_service.find_row_by_id(SHEET_CERTIFICATES, cert_id) if cert_id else None
 
         now = datetime.now().strftime('%Y-%m-%d')
         updates = [
-            {'range': f'시트1!L{site_row}', 'values': [['']]},
-            {'range': f'시트1!O{site_row}', 'values': [['']]},
-            {'range': f'시트1!T{site_row}', 'values': [['미배정']]},
-            {'range': f'시트1!V{site_row}', 'values': [[now]]},
-            {'range': f'시트2!I{manager_row}', 'values': [[max(0, int(manager.get('현재담당현장수') or 0) - 1)]]},
+            {'range': f'{SHEET_SITES}!M{site_row}', 'values': [['']]},
+            {'range': f'{SHEET_SITES}!P{site_row}', 'values': [['']]},
+            {'range': f'{SHEET_SITES}!U{site_row}', 'values': [['미배정']]},
+            {'range': f'{SHEET_SITES}!W{site_row}', 'values': [[now]]},
+            {'range': f'{SHEET_PERSONNEL}!I{manager_row}', 'values': [[max(0, int(manager.get('현재담당현장수') or 0) - 1)]]},
         ]
         if int(manager.get('현재담당현장수') or 0) <= 1:
-            updates.append({'range': f'시트2!H{manager_row}', 'values': [['투입가능']]})
+            updates.append({'range': f'{SHEET_PERSONNEL}!H{manager_row}', 'values': [['투입가능']]})
         if cert_id and cert_row:
-            updates.append({'range': f'시트3!J{cert_row}', 'values': [['사용가능']]})
-            updates.append({'range': f'시트3!K{cert_row}', 'values': [['']]})
+            updates.append({'range': f'{SHEET_CERTIFICATES}!J{cert_row}', 'values': [['사용가능']]})
+            updates.append({'range': f'{SHEET_CERTIFICATES}!K{cert_row}', 'values': [['']]})
 
         sheets_service.batch_update(updates)
 

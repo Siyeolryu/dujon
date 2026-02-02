@@ -65,6 +65,21 @@ def get_sheet_id_by_name(service, sheet_name):
     return None
 
 
+def get_sheet1_column_count(service):
+    """시트1(현장정보) 현재 컬럼 수. 17=기본, 22=VLOOKUP 적용 후."""
+    try:
+        meta = service.spreadsheets().get(
+            spreadsheetId=SPREADSHEET_ID,
+            fields='sheets(properties(title,gridProperties(columnCount)))',
+        ).execute()
+        for sheet in meta.get('sheets', []):
+            if sheet['properties'].get('title') == '시트1':
+                return sheet['properties'].get('gridProperties', {}).get('columnCount', 17)
+    except Exception:
+        pass
+    return 17
+
+
 def create_header_format(sheet_id):
     """헤더 행 회색 배경 + 굵게"""
     return {
@@ -112,17 +127,18 @@ def create_striped_rows_format(sheet_id):
     }
 
 
-def apply_sheet1_formatting(sheet_id):
-    """시트1 (현장정보) 조건부 서식"""
+def apply_sheet1_formatting(sheet_id, sheet1_col_count=17):
+    """시트1 (현장정보) 조건부 서식. sheet1_col_count: 17=기본(O열), 22=VLOOKUP 적용(T열)."""
     requests = []
     requests.append(create_header_format(sheet_id))
 
-    # 배정상태 (O열 = 14)
+    # 배정상태: 17컬럼=O(14), 22컬럼=T(19)
+    status_col_idx = 19 if sheet1_col_count >= 22 else 14
     requests.append({
         'addConditionalFormatRule': {
             'rule': {
                 'ranges': [{'sheetId': sheet_id, 'startRowIndex': 1, 'endRowIndex': 1000,
-                           'startColumnIndex': 14, 'endColumnIndex': 15}],
+                           'startColumnIndex': status_col_idx, 'endColumnIndex': status_col_idx + 1}],
                 'booleanRule': {
                     'condition': {'type': 'TEXT_EQ', 'values': [{'userEnteredValue': '배정완료'}]},
                     'format': {'backgroundColor': {'red': 0.85, 'green': 0.92, 'blue': 0.83}},
@@ -135,7 +151,7 @@ def apply_sheet1_formatting(sheet_id):
         'addConditionalFormatRule': {
             'rule': {
                 'ranges': [{'sheetId': sheet_id, 'startRowIndex': 1, 'endRowIndex': 1000,
-                           'startColumnIndex': 14, 'endColumnIndex': 15}],
+                           'startColumnIndex': status_col_idx, 'endColumnIndex': status_col_idx + 1}],
                 'booleanRule': {
                     'condition': {'type': 'TEXT_EQ', 'values': [{'userEnteredValue': '미배정'}]},
                     'format': {'backgroundColor': {'red': 0.96, 'green': 0.8, 'blue': 0.8}},
@@ -335,9 +351,20 @@ def main():
         return
 
     all_requests = []
-    sheet_names = [('시트1', apply_sheet1_formatting), ('시트2', apply_sheet2_formatting), ('시트3', apply_sheet3_formatting)]
+    # 시트1은 컬럼 수에 따라 배정상태 열 분기 (17 vs 22)
+    sheet1_col_count = get_sheet1_column_count(service)
+    print(f"   📐 시트1 컬럼 수: {sheet1_col_count} (17=기본, 22=VLOOKUP 적용)")
+    print()
 
-    for name, apply_fn in sheet_names:
+    def apply_sheet1_with_cols(sheet_id):
+        return apply_sheet1_formatting(sheet_id, sheet1_col_count)
+
+    sheet_configs = [
+        ('시트1', apply_sheet1_with_cols),
+        ('시트2', apply_sheet2_formatting),
+        ('시트3', apply_sheet3_formatting),
+    ]
+    for name, apply_fn in sheet_configs:
         sheet_id = get_sheet_id_by_name(service, name)
         if sheet_id is None:
             print(f"⚠️ {name}을(를) 찾을 수 없습니다. 건너뜁니다.")

@@ -1,0 +1,9 @@
+{
+  "web": {
+    "client_id": "여기에_Google_Cloud_클라이언트_ID_입력",
+    "client_secret": "여기에_클라이언트_시크릿_입력",
+    "redirect_uris": ["http://localhost:4100/code"],
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token"
+  }
+}

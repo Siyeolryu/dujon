@@ -3,7 +3,7 @@
 """
 from datetime import datetime
 from flask import Blueprint, jsonify, request
-from api.services.sheets_service import sheets_service
+from api.services.sheets_service import sheets_service, SHEET_PERSONNEL
 
 bp = Blueprint('personnel', __name__)
 
@@ -72,7 +72,7 @@ def update_personnel(personnel_id):
                 'error': {'code': 'PERSONNEL_NOT_FOUND', 'message': f'인력ID {personnel_id}를 찾을 수 없습니다'},
             }), 404
 
-        row_num = sheets_service.find_row_by_id('시트2', personnel_id)
+        row_num = sheets_service.find_row_by_id(SHEET_PERSONNEL, personnel_id)
         if not row_num:
             return jsonify({
                 'success': False,
@@ -88,7 +88,7 @@ def update_personnel(personnel_id):
         updates = []
         for field, col in column_map.items():
             if field in data:
-                updates.append({'range': f'시트2!{col}{row_num}', 'values': [[data[field]]]})
+                updates.append({'range': f'{SHEET_PERSONNEL}!{col}{row_num}', 'values': [[data[field]]]})
 
         if updates:
             sheets_service.batch_update(updates)
