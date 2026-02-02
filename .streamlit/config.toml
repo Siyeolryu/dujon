@@ -1,0 +1,10 @@
+# Streamlit 설정 (로컬/Streamlit Cloud 공통)
+# https://docs.streamlit.io/develop/api-reference/configuration
+
+[server]
+headless = true
+port = 8501
+enableCORS = false
+
+[browser]
+gatherUsageStats = false
