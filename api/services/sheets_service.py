@@ -10,9 +10,13 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-# 프로젝트 루트에서 실행 가정 (python api/app.py)
-DEFAULT_SPREADSHEET_ID = '15fAEzkC9FCLA6sG1N--f69r-32WHoYLvmXcwED5xWzM'
-SPREADSHEET_ID = os.getenv('SPREADSHEET_ID', DEFAULT_SPREADSHEET_ID)
+# 프로젝트 루트에서 실행 가정. SPREADSHEET_ID는 .env에 설정 (실제 값은 코드에 두지 않음)
+SPREADSHEET_ID = os.getenv('SPREADSHEET_ID', '').strip()
+
+# 시트 탭 이름 (Google Sheets 구축가이드 기준: 현장정보, 인력풀, 자격증풀. 미설정 시 시트1/시트2/시트3)
+SHEET_SITES = os.getenv('SHEET_SITES', '시트1').strip() or '시트1'
+SHEET_PERSONNEL = os.getenv('SHEET_PERSONNEL', '시트2').strip() or '시트2'
+SHEET_CERTIFICATES = os.getenv('SHEET_CERTIFICATES', '시트3').strip() or '시트3'
 
 
 class SheetsService:
@@ -57,7 +61,9 @@ class SheetsService:
         return self._service
 
     def read_sheet(self, range_name):
-        """시트 범위 읽기. range_name 예: '시트1!A2:V'"""
+        """시트 범위 읽기. range_name 예: '시트1!A2:V'. SPREADSHEET_ID 없으면 빈 리스트 (로컬 확인용)."""
+        if not SPREADSHEET_ID:
+            return []
         service = self._get_service()
         result = service.spreadsheets().values().get(
             spreadsheetId=SPREADSHEET_ID,
@@ -72,8 +78,8 @@ class SheetsService:
         return row
 
     def get_all_sites(self):
-        """현장 정보 전체 조회 (시트1). 17컬럼(기본) / 22컬럼(VLOOKUP 적용) 모두 지원"""
-        values = self.read_sheet('시트1!A2:V')
+        """현장 정보 전체 조회 (현장정보 시트). 17/22/23컬럼(건축주명 포함) 지원"""
+        values = self.read_sheet(f'{SHEET_SITES}!A2:W')
         if not values:
             return []
 
@@ -88,6 +94,7 @@ class SheetsService:
                 site = {
                     '현장ID': row[0],
                     '현장명': row[1],
+                    '건축주명': '',
                     '회사구분': row[2],
                     '주소': row[3],
                     '위도': row[4],
@@ -109,11 +116,39 @@ class SheetsService:
                     '등록일': row[15],
                     '수정일': row[16],
                 }
+            elif n >= 23:
+                self._pad_row(row, 23)
+                site = {
+                    '현장ID': row[0],
+                    '현장명': row[1],
+                    '건축주명': row[2],
+                    '회사구분': row[3],
+                    '주소': row[4],
+                    '위도': row[5],
+                    '경도': row[6],
+                    '건축허가일': row[7],
+                    '착공예정일': row[8],
+                    '준공일': row[9],
+                    '현장상태': row[10],
+                    '특이사항': row[11],
+                    '담당소장ID': row[12],
+                    '담당소장명': row[13],
+                    '담당소장연락처': row[14],
+                    '사용자격증ID': row[15],
+                    '자격증명': row[16],
+                    '자격증소유자명': row[17],
+                    '자격증소유자연락처': row[18],
+                    '준공필증파일URL': row[19],
+                    '배정상태': row[20],
+                    '등록일': row[21],
+                    '수정일': row[22],
+                }
             else:
                 self._pad_row(row, 22)
                 site = {
                     '현장ID': row[0],
                     '현장명': row[1],
+                    '건축주명': '',
                     '회사구분': row[2],
                     '주소': row[3],
                     '위도': row[4],
@@ -146,8 +181,8 @@ class SheetsService:
         return None
 
     def get_all_personnel(self):
-        """인력 정보 전체 조회 (시트2)"""
-        values = self.read_sheet('시트2!A2:L')
+        """인력 정보 전체 조회 (인력풀 시트)"""
+        values = self.read_sheet(f'{SHEET_PERSONNEL}!A2:L')
         if not values:
             return []
 
@@ -178,8 +213,8 @@ class SheetsService:
         return None
 
     def get_all_certificates(self):
-        """자격증 정보 전체 조회 (시트3)"""
-        values = self.read_sheet('시트3!A2:M')
+        """자격증 정보 전체 조회 (자격증풀 시트)"""
+        values = self.read_sheet(f'{SHEET_CERTIFICATES}!A2:M')
         if not values:
             return []
 
@@ -212,8 +247,16 @@ class SheetsService:
 
     # ---------- 2-2 데이터 수정 API용 ----------
 
+    def _require_spreadsheet(self):
+        """쓰기 작업 시 SPREADSHEET_ID 필요"""
+        if not SPREADSHEET_ID:
+            raise ValueError(
+                'SPREADSHEET_ID가 설정되지 않았습니다. .env에 SPREADSHEET_ID를 추가한 뒤 Google 시트 연동을 설정하세요.'
+            )
+
     def update_cell(self, range_name, value):
         """셀 1개 업데이트"""
+        self._require_spreadsheet()
         service = self._get_service()
         body = {'values': [[value]]}
         return service.spreadsheets().values().update(
@@ -225,6 +268,7 @@ class SheetsService:
 
     def update_row(self, range_name, values):
         """행(여러 셀) 업데이트"""
+        self._require_spreadsheet()
         service = self._get_service()
         body = {'values': [values]}
         return service.spreadsheets().values().update(
@@ -238,6 +282,7 @@ class SheetsService:
         """여러 범위 일괄 업데이트. updates = [{'range': '시트1!A1', 'values': [[v]]}, ...]"""
         if not updates:
             return
+        self._require_spreadsheet()
         service = self._get_service()
         data = [{'range': u['range'], 'values': u['values']} for u in updates]
         body = {'valueInputOption': 'USER_ENTERED', 'data': data}
@@ -248,7 +293,9 @@ class SheetsService:
 
     def find_row_by_id(self, sheet_name, id_value):
         """ID 컬럼(A열)으로 행 번호 반환. 1-based, 헤더 다음이 2행."""
-        values = self.read_sheet(f'{sheet_name}!A2:A')
+        if not SPREADSHEET_ID:
+            return None
+        values = self.read_sheet(f"{sheet_name}!A2:A")
         for idx, row in enumerate(values):
             if row and str(row[0]).strip() == str(id_value).strip():
                 return idx + 2
@@ -256,6 +303,7 @@ class SheetsService:
 
     def append_row(self, sheet_name, values):
         """시트 마지막에 행 추가"""
+        self._require_spreadsheet()
         service = self._get_service()
         body = {'values': [values]}
         service.spreadsheets().values().append(

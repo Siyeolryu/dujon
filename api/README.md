@@ -20,11 +20,16 @@ python -m api.app
 - 현장 목록: http://localhost:5000/api/sites
 - 통계: http://localhost:5000/api/stats
 
-## 필요 조건
+## DB: Google Sheets 연동
 
+현장등록·자격증등록·인력 등 모든 데이터는 **Google Sheets**를 DB로 사용합니다.
+
+- `.env`에 `SPREADSHEET_ID` 설정 (스프레드시트 URL의 `/d/XXXXXXXX/edit` 에서 XXXXXXXX)
 - 프로젝트 루트에 `token.pickle` (또는 첫 실행 시 Google 로그인으로 생성)
 - 프로젝트 루트에 `client_secret_xxx.json` (Google Cloud OAuth2 클라이언트)
-- Google Sheets 시트 이름: **시트1**, **시트2**, **시트3**
+- 시트 탭 이름: `.env`에서 `SHEET_SITES`, `SHEET_PERSONNEL`, `SHEET_CERTIFICATES`로 지정 가능  
+  미설정 시 **시트1**(현장정보), **시트2**(인력풀), **시트3**(자격증풀) 사용  
+  구축가이드대로 만들었다면 `SHEET_SITES=현장정보`, `SHEET_PERSONNEL=인력풀`, `SHEET_CERTIFICATES=자격증풀` 로 설정
 
 ## 엔드포인트
 
@@ -41,12 +46,13 @@ python -m api.app
 | GET /api/stats | 통계 |
 | GET /api/health | 헬스 체크 |
 
-### 수정 (2-2)
+### 수정 (2-2, Google Sheets에 저장)
 | 경로 | 설명 |
 |------|------|
-| POST /api/sites | 현장 생성 (body: 현장ID, 현장명, 회사구분, 주소 등) |
+| POST /api/sites | 현장 등록 (Google Sheets 현장정보 시트에 추가) |
 | PUT /api/sites/<id> | 현장 수정 |
 | POST /api/sites/<id>/assign | 소장 배정 (body: manager_id, certificate_id) |
 | POST /api/sites/<id>/unassign | 소장 배정 해제 |
 | PUT /api/personnel/<id> | 인력 정보 수정 |
+| POST /api/certificates | 자격증 등록 (Google Sheets 자격증풀 시트에 추가, 자격증ID·소유자ID 자동 부여) |
 | PUT /api/certificates/<id> | 자격증 정보 수정 |

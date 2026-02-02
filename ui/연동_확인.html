@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API·Google Sheets 연동 확인</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background-color: #F8F9FA;
+            color: #212529;
+            line-height: 1.6;
+            padding: 24px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        header {
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+        header h1 { font-size: 22px; font-weight: 600; color: #1a1d21; margin-bottom: 8px; }
+        header .meta { font-size: 14px; color: #6c757d; }
+        .api-setup {
+            background: #f8f9fa;
+            padding: 14px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .api-setup label { font-weight: 500; color: #495057; }
+        .api-setup input {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+        }
+        .api-setup button {
+            padding: 10px 20px;
+            background: #0d6efd;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .api-setup button:hover { background: #0b5ed7; }
+        .api-setup button:disabled { background: #adb5bd; cursor: not-allowed; }
+        section {
+            background: #fff;
+            padding: 20px 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 16px;
+        }
+        section h2 { font-size: 16px; font-weight: 600; color: #495057; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e9ecef; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #f1f3f5; vertical-align: middle; }
+        th { background: #f8f9fa; font-weight: 600; color: #495057; font-size: 12px; }
+        tr:last-child td { border-bottom: none; }
+        .col-name { max-width: 320px; }
+        .col-action { width: 100px; }
+        .col-result { min-width: 200px; font-size: 13px; }
+        .btn-check {
+            padding: 8px 14px;
+            background: #198754;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-check:hover { background: #157347; }
+        .result-pending { color: #6c757d; font-style: italic; }
+        .result-ok { color: #198754; font-weight: 500; }
+        .result-fail { color: #dc3545; font-weight: 500; }
+        .result-ok::before { content: '✓ '; }
+        .result-fail::before { content: '✗ '; }
+        .back-link { display: inline-block; margin-top: 16px; color: #0d6efd; text-decoration: none; font-size: 14px; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>API·Google Sheets 연동 확인</h1>
+            <p class="meta">5개 항목을 실행해 연동 상태를 확인합니다. API 서버가 실행 중이어야 합니다.</p>
+        </header>
+
+        <div class="api-setup">
+            <label for="apiBase">API 기본 URL:</label>
+            <input type="text" id="apiBase" value="" placeholder="http://localhost:5000">
+            <button type="button" id="btnRunAll">전체 확인</button>
+        </div>
+
+        <section>
+            <h2>연동 테스트 5개</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-name">항목</th>
+                        <th class="col-action">확인</th>
+                        <th class="col-result">결과</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-test="health">
+                        <td class="col-name">1. API 헬스 (GET /api/health)</td>
+                        <td><button type="button" class="btn-check" data-run="health">확인</button></td>
+                        <td class="col-result result-pending" data-result="">—</td>
+                    </tr>
+                    <tr data-test="sites">
+                        <td class="col-name">2. 현장 목록 조회 (GET /api/sites) → Google Sheets 현장정보 시트 읽기</td>
+                        <td><button type="button" class="btn-check" data-run="sites">확인</button></td>
+                        <td class="col-result result-pending" data-result="">—</td>
+                    </tr>
+                    <tr data-test="certificates">
+                        <td class="col-name">3. 자격증 목록 조회 (GET /api/certificates) → Google Sheets 자격증풀 시트 읽기</td>
+                        <td><button type="button" class="btn-check" data-run="certificates">확인</button></td>
+                        <td class="col-result result-pending" data-result="">—</td>
+                    </tr>
+                    <tr data-test="siteDetail">
+                        <td class="col-name">4. 현장 상세 조회 (GET /api/sites/&lt;id&gt;) → 시트 데이터 반환</td>
+                        <td><button type="button" class="btn-check" data-run="siteDetail">확인</button></td>
+                        <td class="col-result result-pending" data-result="">—</td>
+                    </tr>
+                    <tr data-test="certDetail">
+                        <td class="col-name">5. 자격증 상세 조회 (GET /api/certificates/&lt;id&gt;) → 시트 데이터 반환</td>
+                        <td><button type="button" class="btn-check" data-run="certDetail">확인</button></td>
+                        <td class="col-result result-pending" data-result="">—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <a href="완료_확인_체크리스트.html" class="back-link">← 체크리스트로 돌아가기</a>
+    </div>
+
+    <script>
+        (function () {
+            var apiBaseInput = document.getElementById('apiBase');
+            var btnRunAll = document.getElementById('btnRunAll');
+
+            // 기본 URL: 현재 페이지가 file:// 이면 localhost:5000, 아니면 같은 origin + /api 제거한 base
+            function getDefaultBase() {
+                var o = window.location.origin;
+                if (!o || o === 'file://' || o === 'null') return 'http://localhost:5000';
+                return o;
+            }
+            if (!apiBaseInput.value) apiBaseInput.value = getDefaultBase();
+
+            function base() {
+                var v = (apiBaseInput.value || '').trim();
+                return v ? v.replace(/\/+$/, '') : getDefaultBase();
+            }
+
+            function setResult(row, ok, message) {
+                var cell = row.querySelector('[data-result]');
+                cell.textContent = message || (ok ? '성공' : '실패');
+                cell.className = 'col-result ' + (ok ? 'result-ok' : 'result-fail');
+            }
+
+            function runHealth() {
+                var row = document.querySelector('[data-test="health"]');
+                return fetch(base() + '/api/health')
+                    .then(function (res) {
+                        if (res.ok) {
+                            return res.json().then(function (j) {
+                                setResult(row, true, '연동 정상 (status: ' + (j.status || '') + ')');
+                            });
+                        }
+                        setResult(row, false, 'HTTP ' + res.status);
+                    })
+                    .catch(function (e) {
+                        setResult(row, false, '연결 실패: ' + (e.message || '네트워크 오류'));
+                    });
+            }
+
+            function runSites() {
+                var row = document.querySelector('[data-test="sites"]');
+                return fetch(base() + '/api/sites')
+                    .then(function (res) {
+                        if (!res.ok) {
+                            setResult(row, false, 'HTTP ' + res.status);
+                            return;
+                        }
+                        return res.json().then(function (j) {
+                            var ok = j && j.success && Array.isArray(j.data);
+                            var cnt = ok ? j.data.length : 0;
+                            setResult(row, ok, ok ? '성공 (현장 ' + cnt + '건)' : (j.error && j.error.message) || '응답 형식 오류');
+                        });
+                    })
+                    .catch(function (e) {
+                        setResult(row, false, '연결 실패: ' + (e.message || '네트워크 오류'));
+                    });
+            }
+
+            function runCertificates() {
+                var row = document.querySelector('[data-test="certificates"]');
+                return fetch(base() + '/api/certificates')
+                    .then(function (res) {
+                        if (!res.ok) {
+                            setResult(row, false, 'HTTP ' + res.status);
+                            return;
+                        }
+                        return res.json().then(function (j) {
+                            var ok = j && j.success && Array.isArray(j.data);
+                            var cnt = ok ? j.data.length : 0;
+                            setResult(row, ok, ok ? '성공 (자격증 ' + cnt + '건)' : (j.error && j.error.message) || '응답 형식 오류');
+                        });
+                    })
+                    .catch(function (e) {
+                        setResult(row, false, '연결 실패: ' + (e.message || '네트워크 오류'));
+                    });
+            }
+
+            function runSiteDetail() {
+                var row = document.querySelector('[data-test="siteDetail"]');
+                return fetch(base() + '/api/sites')
+                    .then(function (res) { return res.ok ? res.json() : null; })
+                    .then(function (j) {
+                        var id = j && j.data && j.data[0] && j.data[0].현장ID;
+                        if (!id) {
+                            setResult(row, false, '현장 목록 없음 (먼저 현장 데이터 필요)');
+                            return;
+                        }
+                        return fetch(base() + '/api/sites/' + encodeURIComponent(id))
+                            .then(function (r) {
+                                if (r.ok) {
+                                    return r.json().then(function (d) {
+                                        setResult(row, d && d.success && d.data, d && d.data ? '성공 (현장ID: ' + id + ')' : '응답 오류');
+                                    });
+                                }
+                                setResult(row, false, 'HTTP ' + r.status);
+                            });
+                    })
+                    .catch(function (e) {
+                        setResult(row, false, '연결 실패: ' + (e.message || '네트워크 오류'));
+                    });
+            }
+
+            function runCertDetail() {
+                var row = document.querySelector('[data-test="certDetail"]');
+                return fetch(base() + '/api/certificates')
+                    .then(function (res) { return res.ok ? res.json() : null; })
+                    .then(function (j) {
+                        var id = j && j.data && j.data[0] && j.data[0].자격증ID;
+                        if (!id) {
+                            setResult(row, false, '자격증 목록 없음 (먼저 자격증 데이터 필요)');
+                            return;
+                        }
+                        return fetch(base() + '/api/certificates/' + encodeURIComponent(id))
+                            .then(function (r) {
+                                if (r.ok) {
+                                    return r.json().then(function (d) {
+                                        setResult(row, d && d.success && d.data, d && d.data ? '성공 (자격증ID: ' + id + ')' : '응답 오류');
+                                    });
+                                }
+                                setResult(row, false, 'HTTP ' + r.status);
+                            });
+                    })
+                    .catch(function (e) {
+                        setResult(row, false, '연결 실패: ' + (e.message || '네트워크 오류'));
+                    });
+            }
+
+            var runners = {
+                health: runHealth,
+                sites: runSites,
+                certificates: runCertificates,
+                siteDetail: runSiteDetail,
+                certDetail: runCertDetail
+            };
+
+            document.querySelectorAll('.btn-check').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var key = btn.getAttribute('data-run');
+                    if (runners[key]) runners[key]();
+                });
+            });
+
+            btnRunAll.addEventListener('click', function () {
+                btnRunAll.disabled = true;
+                runHealth()
+                    .then(function () { return runSites(); })
+                    .then(function () { return runCertificates(); })
+                    .then(function () { return runSiteDetail(); })
+                    .then(function () { return runCertDetail(); })
+                    .then(function () { btnRunAll.disabled = false; })
+                    .catch(function () { btnRunAll.disabled = false; });
+            });
+        })();
+    </script>
+</body>
+</html>

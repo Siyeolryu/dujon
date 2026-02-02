@@ -2,18 +2,72 @@
 현장배정 관리 시스템 - REST API 서버 (2-1 조회 + 2-2 수정)
 """
 import os
+import json
+import logging
+import uuid
 from datetime import datetime
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, g, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# 프로젝트 루트 (프론트엔드 정적 파일 서빙용)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 app = Flask(__name__)
+logger = logging.getLogger(__name__)
+
+
+@app.before_request
+def assign_request_id():
+    """요청별 request_id 부여 (에러 추적용)"""
+    g.request_id = request.headers.get('X-Request-ID') or str(uuid.uuid4())[:8]
+
+
+@app.after_request
+def log_connection_errors(response):
+    """4xx/5xx 응답 시 백엔드-프론트 연결 문제 확인용 로그 기록"""
+    if response.status_code >= 400:
+        try:
+            request_id_val = getattr(g, 'request_id', '')
+            data = None
+            try:
+                if response.is_json:
+                    data = response.get_json(silent=True) or {}
+            except Exception:
+                pass
+            error_code = (data or {}).get('error', {}).get('code', '')
+            root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            log_path = os.path.join(root, '.cursor', 'debug.log')
+            line = json.dumps({
+                'location': 'api/app.py:after_request',
+                'message': 'BE connection error response',
+                'data': {
+                    'path': request.path,
+                    'method': request.method,
+                    'status_code': response.status_code,
+                    'error_code': error_code,
+                    'request_id': request_id_val,
+                },
+                'timestamp': int(datetime.now().timestamp() * 1000),
+                'sessionId': 'fe-be-connection',
+                'hypothesisId': 'connection-fail',
+            }, ensure_ascii=False) + '\n'
+            os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(line)
+        except Exception:
+            pass
+    return response
+
 
 CORS(app, resources={
     r"/api/*": {
-        "origins": os.getenv('ALLOWED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(','),
+        "origins": os.getenv(
+            'ALLOWED_ORIGINS',
+            'http://localhost:5000,http://127.0.0.1:5000,http://localhost:8000,http://127.0.0.1:8000'
+        ).split(','),
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization", "X-API-Key", "If-Match"],
     }
@@ -28,9 +82,9 @@ app.register_blueprint(certificates.bp, url_prefix='/api')
 app.register_blueprint(stats.bp, url_prefix='/api')
 
 
-@app.route('/')
-def index():
-    """API 정보"""
+@app.route('/api-info')
+def api_info():
+    """API 정보 (JSON)"""
     return jsonify({
         'name': '현장배정 관리 API',
         'version': '1.0.0',
@@ -51,6 +105,36 @@ def index():
     })
 
 
+@app.route('/')
+def index():
+    """프론트엔드 메인 페이지 (로컬 확인용)"""
+    return send_from_directory(PROJECT_ROOT, 'site-management.html')
+
+
+@app.route('/css/<path:subpath>')
+def serve_css(subpath):
+    """css 정적 파일"""
+    if '..' in subpath:
+        return jsonify({'error': 'Forbidden'}), 403
+    return send_from_directory(os.path.join(PROJECT_ROOT, 'css'), subpath)
+
+
+@app.route('/js/<path:subpath>')
+def serve_js(subpath):
+    """js 정적 파일"""
+    if '..' in subpath:
+        return jsonify({'error': 'Forbidden'}), 403
+    return send_from_directory(os.path.join(PROJECT_ROOT, 'js'), subpath)
+
+
+@app.route('/ui/<path:subpath>')
+def serve_ui(subpath):
+    """ui 정적 파일 (체크리스트 등)"""
+    if '..' in subpath:
+        return jsonify({'error': 'Forbidden'}), 403
+    return send_from_directory(os.path.join(PROJECT_ROOT, 'ui'), subpath)
+
+
 @app.route('/api/health')
 def health():
     """헬스 체크"""
@@ -63,22 +147,34 @@ def health():
 
 @app.errorhandler(404)
 def not_found(error):
+    request_id = getattr(g, 'request_id', '')
+    logger.warning(
+        '404 NOT_FOUND path=%s method=%s request_id=%s',
+        request.path, request.method, request_id,
+    )
     return jsonify({
         'success': False,
         'error': {
             'code': 'NOT_FOUND',
             'message': '요청한 리소스를 찾을 수 없습니다',
+            'request_id': request_id,
         },
     }), 404
 
 
 @app.errorhandler(500)
 def internal_error(error):
+    request_id = getattr(g, 'request_id', '')
+    logger.exception(
+        '500 INTERNAL_ERROR path=%s method=%s request_id=%s error=%s',
+        request.path, request.method, request_id, str(error),
+    )
     return jsonify({
         'success': False,
         'error': {
             'code': 'INTERNAL_ERROR',
             'message': '서버 내부 오류가 발생했습니다',
+            'request_id': request_id,
         },
     }), 500
 

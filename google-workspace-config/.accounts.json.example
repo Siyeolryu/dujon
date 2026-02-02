@@ -1,0 +1,14 @@
+{
+  "accounts": [
+    {
+      "email": "your-email@gmail.com",
+      "account_type": "personal",
+      "extra_info": "예: 개인 Gmail, 가족 캘린더 포함"
+    },
+    {
+      "email": "work@yourcompany.com",
+      "account_type": "work",
+      "extra_info": "예: Google Workspace 업무용"
+    }
+  ]
+}

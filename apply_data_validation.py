@@ -31,9 +31,13 @@ except ImportError:
     print("pip install google-api-python-client google-auth-oauthlib google-auth-httplib2")
     sys.exit(1)
 
-# 설정
-SPREADSHEET_ID = '15fAEzkC9FCLA6sG1N--f69r-32WHoYLvmXcwED5xWzM'
+# 설정 (.env 우선, 없으면 빈 문자열 → main에서 검사)
+SPREADSHEET_ID = os.getenv('SPREADSHEET_ID', '').strip()
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
+# 시트1 컬럼 수: 17=기본, 22=VLOOKUP 적용 후. 검증/서식 컬럼 매핑에 사용
+SHEET1_COLS_17 = 17
+SHEET1_COLS_22 = 22
 
 # 컬럼 문자를 숫자로 변환 (A=1, B=2, ...)
 def column_to_number(col):
@@ -174,13 +178,34 @@ def get_sheet_id_by_name(service, sheet_name):
     
     return None
 
+
+def get_sheet1_column_count(service):
+    """시트1(현장정보) 현재 컬럼 수. 17=기본, 22=VLOOKUP 적용 후."""
+    try:
+        meta = service.spreadsheets().get(
+            spreadsheetId=SPREADSHEET_ID,
+            fields='sheets(properties(title,gridProperties(columnCount)))',
+        ).execute()
+        for sheet in meta.get('sheets', []):
+            if sheet['properties'].get('title') == '시트1':
+                return sheet['properties'].get('gridProperties', {}).get('columnCount', SHEET1_COLS_17)
+    except Exception:
+        pass
+    return SHEET1_COLS_17
+
 def main():
     """메인 함수"""
     print("=" * 60)
     print("📋 현장배정 관리 시스템 - 데이터 검증 규칙 적용")
     print("=" * 60)
     print()
-    
+
+    if not SPREADSHEET_ID:
+        print("❌ SPREADSHEET_ID가 설정되지 않았습니다.")
+        print("   .env 파일에 SPREADSHEET_ID=your_spreadsheet_id 를 추가하거나")
+        print("   환경 변수로 설정한 뒤 다시 실행하세요.")
+        return
+
     # Google Sheets API 서비스 생성
     print("🔑 Google Sheets API 인증 중...")
     try:
@@ -190,39 +215,51 @@ def main():
     except Exception as e:
         print(f"❌ 인증 실패: {e}")
         return
-    
+
+    # 시트1 컬럼 수에 따라 배정상태/등록일/수정일 컬럼 결정 (17 vs 22)
+    sheet1_cols = get_sheet1_column_count(service)
+    if sheet1_cols >= SHEET1_COLS_22:
+        status_col = 'T'   # 배정상태 (22컬럼)
+        date_cols = ['G', 'H', 'I', 'U', 'V']  # 건축허가일, 착공예정일, 준공일, 등록일, 수정일
+        print(f"   📐 시트1: 22컬럼(VLOOKUP 적용) 기준으로 검증 적용")
+    else:
+        status_col = 'O'   # 배정상태 (17컬럼)
+        date_cols = ['G', 'H', 'I', 'P', 'Q']  # 건축허가일, 착공예정일, 준공일, 등록일, 수정일
+        print(f"   📐 시트1: 17컬럼(기본) 기준으로 검증 적용")
+    print()
+
     # 적용할 검증 규칙 정의
     validations = []
-    
+
     # 시트1: 현장정보
     sheet1_id = get_sheet_id_by_name(service, '시트1')
     if sheet1_id is not None:
         print("📌 시트1 (현장정보) 검증 규칙 준비...")
-        
+
         # 회사구분 드롭다운
         validations.append(apply_dropdown_validation(
-            service, sheet1_id, '시트1', 'C', 
+            service, sheet1_id, '시트1', 'C',
             ['더존종합건설', '더존하우징']
         ))
-        
+
         # 현장상태 드롭다운
         validations.append(apply_dropdown_validation(
             service, sheet1_id, '시트1', 'J',
             ['건축허가', '착공예정', '착공중', '준공']
         ))
-        
-        # 배정상태 드롭다운
+
+        # 배정상태 드롭다운 (17컬럼=O, 22컬럼=T)
         validations.append(apply_dropdown_validation(
-            service, sheet1_id, '시트1', 'O',
+            service, sheet1_id, '시트1', status_col,
             ['배정완료', '미배정']
         ))
-        
-        # 날짜 형식 검증
-        for col in ['G', 'H', 'I', 'P', 'Q']:  # 건축허가일, 착공예정일, 준공일, 등록일, 수정일
+
+        # 날짜 형식 검증 (17컬럼: P,Q / 22컬럼: U,V)
+        for col in date_cols:
             validations.append(apply_date_validation(
                 service, sheet1_id, '시트1', col
             ))
-        
+
         print(f"   ✅ 8개 검증 규칙 준비 완료")
     
     # 시트2: 인력풀
@@ -300,8 +337,8 @@ def main():
         print("시트1 (현장정보):")
         print("  - C열: 회사구분 드롭다운")
         print("  - J열: 현장상태 드롭다운")
-        print("  - O열: 배정상태 드롭다운")
-        print("  - G,H,I,P,Q열: 날짜 형식 검증")
+        print(f"  - {status_col}열: 배정상태 드롭다운")
+        print(f"  - {','.join(date_cols)}열: 날짜 형식 검증")
         print()
         print("시트2 (인력풀):")
         print("  - C열: 직책 드롭다운")
