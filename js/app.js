@@ -105,7 +105,8 @@ const App = {
 
     async init() {
         console.log('🚀 현장배정 관리 시스템 시작...');
-        const healthy = await API.healthCheck();
+        console.log('📡 API 모드:', CONFIG.API_MODE);
+        const healthy = await DataAPI.healthCheck();
         const statusEl = document.getElementById('serverStatus');
         if (statusEl) {
             statusEl.textContent = '';
@@ -142,7 +143,7 @@ const App = {
         if (apiCompany) params.company = apiCompany;
         if (filters.status && filters.status !== 'all') params.status = filters.status;
         if (filters.state && filters.state !== 'all') params.state = filters.state;
-        const result = await API.getSites(params);
+        const result = await DataAPI.getSites(params);
         if (result) {
             SiteMap.updateMarkers(result.data);
             this.renderSiteList(result.data);
@@ -262,7 +263,7 @@ const App = {
         if (SiteDetail.currentSite && SiteDetail.currentSite.version) {
             updateData.version = SiteDetail.currentSite.version;
         }
-        const res = await API.updateSite(siteId, updateData);
+        const res = await DataAPI.updateSite(siteId, updateData);
         if (res) {
             UI.showToast('현장 정보가 수정되었습니다.', 'success');
             this.closeEditSiteModal();

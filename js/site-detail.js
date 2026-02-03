@@ -5,7 +5,7 @@ const SiteDetail = {
     currentSite: null,
 
     async open(siteId) {
-        const data = await API.getSiteDetail(siteId);
+        const data = await DataAPI.getSiteDetail(siteId);
         if (!data) return;
         this.currentSite = data;
         const panel = document.getElementById('siteDetailPanel');
