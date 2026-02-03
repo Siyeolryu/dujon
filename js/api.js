@@ -190,3 +190,21 @@ const API = {
         }
     },
 };
+
+// API 라우터: CONFIG.API_MODE에 따라 Flask API 또는 Supabase 직접 연결 사용
+// 사용법: DataAPI.getSites(), DataAPI.getPersonnel() 등
+const DataAPI = new Proxy({}, {
+    get(target, prop) {
+        // API_MODE가 'supabase'이고 SupabaseAPI가 있으면 Supabase 사용
+        if (CONFIG.API_MODE === 'supabase' && typeof SupabaseAPI !== 'undefined') {
+            if (typeof SupabaseAPI[prop] === 'function') {
+                return SupabaseAPI[prop].bind(SupabaseAPI);
+            }
+        }
+        // 그 외에는 Flask API 사용
+        if (typeof API[prop] === 'function') {
+            return API[prop].bind(API);
+        }
+        return undefined;
+    }
+});

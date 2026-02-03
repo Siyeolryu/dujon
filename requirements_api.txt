@@ -13,5 +13,8 @@ google-auth-httplib2>=0.2.0
 # Supabase (DB 백엔드)
 supabase>=2.0.0
 
+# PostgreSQL (Supabase/직접 DB 연결 시)
+psycopg2-binary>=2.9.0
+
 # 환경 변수
 python-dotenv>=1.0.0

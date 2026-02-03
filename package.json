@@ -1,0 +1,11 @@
+{
+  "name": "on-site-allocation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate:db": "node scripts/migrate-db.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.18.0"
+  }
+}

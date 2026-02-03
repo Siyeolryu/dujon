@@ -2,11 +2,19 @@
 // 배포 시: HTML에서 window.__API_BASE_URL__ 를 설정하면 해당 URL 사용 (4단계 배포 대응)
 // 로컬: 같은 호스트에서 서빙 시 상대 경로 사용 (프론트·백 동일 포트)
 const CONFIG = {
+    // API 모드: 'supabase' (Supabase 직접 연결) 또는 'flask' (Flask 백엔드)
+    API_MODE: 'supabase',
+
+    // Flask 백엔드 URL (API_MODE='flask'일 때 사용)
     API_BASE_URL: (typeof window !== 'undefined' && window.__API_BASE_URL__)
         ? window.__API_BASE_URL__
         : (typeof window !== 'undefined' && window.location && window.location.origin
             ? window.location.origin + '/api'
             : 'http://localhost:5000/api'),
+
+    // Supabase 설정 (API_MODE='supabase'일 때 사용)
+    SUPABASE_URL: 'https://hhpofxpnztzibtpkpiar.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhocG9meHBuenR6aWJ0cGtwaWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MDc2NjgsImV4cCI6MjA4MzE4MzY2OH0.qYgw_6KlgPZrQPvLs0IJKb-HRZaWMJxiKv0H4izysAs',
 
     // 자동 새로고침 간격 (밀리초). 0이면 비활성
     AUTO_REFRESH_INTERVAL: 0,  // 60000 = 1분

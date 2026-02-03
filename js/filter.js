@@ -39,7 +39,7 @@ const Filter = {
         if (apiCompany) params.company = apiCompany;
         if (this.currentFilters.status && this.currentFilters.status !== 'all') params.status = this.currentFilters.status;
         if (this.currentFilters.state && this.currentFilters.state !== 'all') params.state = this.currentFilters.state;
-        const result = await API.getSites(params);
+        const result = await DataAPI.getSites(params);
         if (typeof App === 'undefined' || !App.renderSiteList) return;
         if (result) {
             if (typeof SiteMap !== 'undefined') SiteMap.updateMarkers(result.data);
@@ -56,7 +56,7 @@ const Filter = {
     async search() {
         const input = document.getElementById('searchInput');
         const query = input ? input.value.trim() : '';
-        const result = await API.searchSites(query);
+        const result = await DataAPI.searchSites(query);
         if (typeof App === 'undefined' || !App.renderSiteList) return;
         if (result) {
             if (typeof SiteMap !== 'undefined') SiteMap.updateMarkers(result.data);

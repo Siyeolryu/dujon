@@ -5,7 +5,7 @@
 const Dashboard = {
     async load() {
         this.showSkeleton();
-        const data = await API.getStats();
+        const data = await DataAPI.getStats();
         this.hideSkeleton();
         if (!data) return;
         const sites = data.sites || {};

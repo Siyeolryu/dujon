@@ -92,7 +92,7 @@ const Tabs = {
             특이사항: document.getElementById('newNotes')?.value?.trim() || '',
             배정상태: '미배정',
         };
-        const res = await API.createSite(payload);
+        const res = await DataAPI.createSite(payload);
         if (res) {
             UI.showToast('현장이 등록되었습니다.', 'success');
             document.getElementById('formSiteRegister')?.reset();
@@ -119,7 +119,7 @@ const Tabs = {
             사용가능여부: document.getElementById('newCertAvailable')?.value || '사용가능',
             비고: document.getElementById('newCertNotes')?.value?.trim() || '',
         };
-        const res = await API.createCertificate(payload);
+        const res = await DataAPI.createCertificate(payload);
         if (res) {
             UI.showToast('자격증이 등록되었습니다.', 'success');
             document.getElementById('formCertRegister')?.reset();

@@ -18,7 +18,7 @@ const Assign = {
         if (nameEl) nameEl.textContent = siteName || '-';
         if (addrEl) addrEl.textContent = siteAddress || '';
 
-        const detail = await API.getSiteDetail(siteId);
+        const detail = await DataAPI.getSiteDetail(siteId);
         if (detail) this.siteDetail = detail;
 
         const managerSelect = document.getElementById('managerSelect');
@@ -29,8 +29,8 @@ const Assign = {
         document.getElementById('certPreview')?.classList.add('hidden');
         this.updateConfirmButton();
 
-        const personnelRes = await API.getPersonnel({ status: '투입가능', role: '소장' });
-        const certRes = await API.getCertificates({ available: 'true' });
+        const personnelRes = await DataAPI.getPersonnel({ status: '투입가능', role: '소장' });
+        const certRes = await DataAPI.getCertificates({ available: 'true' });
         if (managerSelect && personnelRes && personnelRes.data) {
             personnelRes.data.forEach((p) => {
                 const opt = document.createElement('option');
@@ -62,7 +62,7 @@ const Assign = {
             this.updateConfirmButton();
             return;
         }
-        API.getPersonnelDetail(managerId).then((p) => {
+        DataAPI.getPersonnelDetail(managerId).then((p) => {
             if (!p || p['인력ID'] !== managerId) return;
             preview.innerHTML = `
                 <p><strong>${p['성명'] || '-'}</strong></p>
@@ -84,7 +84,7 @@ const Assign = {
             this.updateConfirmButton();
             return;
         }
-        API.getCertificateDetail(certId).then((c) => {
+        DataAPI.getCertificateDetail(certId).then((c) => {
             if (!c || c['자격증ID'] !== certId) return;
             preview.innerHTML = `
                 <p><strong>${c['자격증명'] || '-'}</strong></p>
@@ -118,7 +118,7 @@ const Assign = {
         const version = (SiteDetail.currentSite && SiteDetail.currentSite['현장ID'] === this.targetSiteId) ? SiteDetail.currentSite.version : (this.siteDetail?.version || null);
         if (version) assignData.version = version;
         try {
-            const res = await API.assignManager(this.targetSiteId, assignData);
+            const res = await DataAPI.assignManager(this.targetSiteId, assignData);
             if (res) {
                 UI.showToast('배정이 완료되었습니다.', 'success');
                 this.close();
@@ -140,7 +140,7 @@ const Assign = {
         let version = (SiteDetail.currentSite && SiteDetail.currentSite['현장ID'] === siteId) ? SiteDetail.currentSite.version : null;
         if (!version && this.siteDetail && this.siteDetail['현장ID'] === siteId) version = this.siteDetail.version;
         try {
-            const res = await API.unassignManager(siteId, version);
+            const res = await DataAPI.unassignManager(siteId, version);
             if (res) {
                 UI.showToast('배정이 해제되었습니다.', 'success');
                 SiteDetail.close();
