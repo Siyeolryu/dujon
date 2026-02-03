@@ -2,6 +2,8 @@
 
 현장배정 관리 시스템을 **Streamlit**으로 실행·운영하는 방법입니다. Streamlit은 기존 Flask API를 그대로 호출합니다.
 
+**UI/UX**: 로컬호스트(site-management.html + css/style.css) 기준으로 통일되어 있습니다. 배경 `#F8F9FA`, 카드 Soft Shadow, 버튼/테이블/폼 스타일이 동일한 톤으로 적용됩니다.
+
 ---
 
 ## 1. 사전 준비

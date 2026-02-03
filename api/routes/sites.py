@@ -4,12 +4,7 @@
 import uuid
 from datetime import datetime
 from flask import Blueprint, jsonify, request
-from api.services.sheets_service import (
-    sheets_service,
-    SHEET_SITES,
-    SHEET_PERSONNEL,
-    SHEET_CERTIFICATES,
-)
+from api.services.db_service import get_db
 from api.services.validation import validate_site_data, validate_assignment, ValidationError
 from api.services.sync_manager import get_sync_manager, ConflictError
 
@@ -27,7 +22,8 @@ def _generate_site_id():
 def get_sites():
     """현장 목록 조회. 쿼리: company, status, state"""
     try:
-        sites = sheets_service.get_all_sites()
+        db = get_db()
+        sites = db.get_all_sites()
 
         company = request.args.get('company')
         status = request.args.get('status')
@@ -64,7 +60,8 @@ def search_sites():
                 'error': {'code': 'INVALID_QUERY', 'message': '검색어를 입력해주세요 (q=)'},
             }), 400
 
-        sites = sheets_service.get_all_sites()
+        db = get_db()
+        sites = db.get_all_sites()
         results = [
             s for s in sites
             if query in (s.get('현장명') or '').lower() or query in (s.get('주소') or '').lower()
@@ -87,7 +84,8 @@ def search_sites():
 def get_site_detail(site_id):
     """현장 상세 조회 (관계 데이터 포함)"""
     try:
-        site = sheets_service.get_site_by_id(site_id)
+        db = get_db()
+        site = db.get_site_by_id(site_id)
         if not site:
             return jsonify({
                 'success': False,
@@ -142,9 +140,10 @@ def create_site():
                 }), 400
 
         # 현장ID 미제공 시 자동 부여
+        db = get_db()
         if not data.get('현장ID') or not str(data.get('현장ID', '')).strip():
             data['현장ID'] = _generate_site_id()
-            while sheets_service.get_site_by_id(data['현장ID']):
+            while db.get_site_by_id(data['현장ID']):
                 data['현장ID'] = _generate_site_id()
 
         try:
@@ -155,39 +154,39 @@ def create_site():
                 'error': {'code': 'VALIDATION_ERROR', 'message': str(e)},
             }), 400
 
-        if sheets_service.get_site_by_id(data['현장ID']):
+        if db.get_site_by_id(data['현장ID']):
             return jsonify({
                 'success': False,
                 'error': {'code': 'DUPLICATE_ID', 'message': f"현장ID {data['현장ID']}가 이미 존재합니다"},
             }), 400
 
         now = datetime.now().strftime('%Y-%m-%d')
-        row_data = [
-            data['현장ID'],
-            data['현장명'],
-            data.get('건축주명', ''),
-            data['회사구분'],
-            data['주소'],
-            data.get('위도', ''),
-            data.get('경도', ''),
-            data.get('건축허가일', ''),
-            data.get('착공예정일', ''),
-            data.get('준공일', ''),
-            data.get('현장상태', '건축허가'),
-            data.get('특이사항', ''),
-            data.get('담당소장ID', ''),
-            '',  # M 담당소장명 (VLOOKUP)
-            '',  # N 담당소장연락처 (VLOOKUP)
-            data.get('사용자격증ID', ''),
-            '',  # P 자격증명 (VLOOKUP)
-            '',  # Q 자격증소유자명 (VLOOKUP)
-            '',  # R 자격증소유자연락처 (VLOOKUP)
-            data.get('준공필증파일URL', ''),
-            data.get('배정상태', '미배정'),
-            now,
-            now,
-        ]
-        sheets_service.append_row(SHEET_SITES, row_data)
+        row_data = {
+            '현장ID': data['현장ID'],
+            '현장명': data['현장명'],
+            '건축주명': data.get('건축주명', ''),
+            '회사구분': data['회사구분'],
+            '주소': data['주소'],
+            '위도': data.get('위도', ''),
+            '경도': data.get('경도', ''),
+            '건축허가일': data.get('건축허가일', ''),
+            '착공예정일': data.get('착공예정일', ''),
+            '준공일': data.get('준공일', ''),
+            '현장상태': data.get('현장상태', '건축허가'),
+            '특이사항': data.get('특이사항', ''),
+            '담당소장ID': data.get('담당소장ID', ''),
+            '담당소장명': '',
+            '담당소장연락처': '',
+            '사용자격증ID': data.get('사용자격증ID', ''),
+            '자격증명': '',
+            '자격증소유자명': '',
+            '자격증소유자연락처': '',
+            '준공필증파일URL': data.get('준공필증파일URL', ''),
+            '배정상태': data.get('배정상태', '미배정'),
+            '등록일': now,
+            '수정일': now,
+        }
+        db.create_site(row_data)
 
         return jsonify({
             'success': True,
@@ -204,24 +203,17 @@ def create_site():
 
 @bp.route('/sites/<site_id>', methods=['PUT'])
 def update_site(site_id):
-    """현장 정보 수정 (22컬럼 시트 기준). 2-3: If-Match 또는 body.version으로 버전 전달 시 충돌 검사"""
+    """현장 정보 수정. 2-3: If-Match 또는 body.version으로 버전 전달 시 충돌 검사"""
     try:
-        site = sheets_service.get_site_by_id(site_id)
+        db = get_db()
+        site = db.get_site_by_id(site_id)
         if not site:
             return jsonify({
                 'success': False,
                 'error': {'code': 'SITE_NOT_FOUND', 'message': f'현장ID {site_id}를 찾을 수 없습니다'},
             }), 404
 
-        row_num = sheets_service.find_row_by_id(SHEET_SITES, site_id)
-        if not row_num:
-            return jsonify({
-                'success': False,
-                'error': {'code': 'ROW_NOT_FOUND', 'message': '행을 찾을 수 없습니다'},
-            }), 404
-
         data = request.json or {}
-        # 2-3: 낙관적 잠금 - 버전 있으면 검사
         version = request.headers.get('If-Match') or data.get('version')
         try:
             get_sync_manager().require_site_version(site_id, version)
@@ -239,28 +231,16 @@ def update_site(site_id):
                 'error': {'code': 'VALIDATION_ERROR', 'message': str(e)},
             }), 400
 
-        # 23컬럼 기준: A=현장ID, B=현장명, C=건축주명, D~W
-        column_map = {
-            '현장명': 'B', '건축주명': 'C', '회사구분': 'D', '주소': 'E', '위도': 'F', '경도': 'G',
-            '건축허가일': 'H', '착공예정일': 'I', '준공일': 'J',
-            '현장상태': 'K', '특이사항': 'L', '담당소장ID': 'M',
-            '사용자격증ID': 'P', '준공필증파일URL': 'T', '배정상태': 'U',
-        }
-        updates = []
-        for field, col in column_map.items():
-            if field in data:
-                val = data[field]
-                updates.append({'range': f'{SHEET_SITES}!{col}{row_num}', 'values': [[val]]})
-
+        allowed = {'현장명', '건축주명', '회사구분', '주소', '위도', '경도', '건축허가일', '착공예정일',
+                   '준공일', '현장상태', '특이사항', '담당소장ID', '사용자격증ID', '준공필증파일URL', '배정상태'}
+        update_data = {k: v for k, v in data.items() if k in allowed}
         now = datetime.now().strftime('%Y-%m-%d')
-        updates.append({'range': f'{SHEET_SITES}!W{row_num}', 'values': [[now]]})
-
-        if updates:
-            sheets_service.batch_update(updates)
+        update_data['수정일'] = now
+        db.update_site(site_id, update_data)
 
         return jsonify({
             'success': True,
-            'data': {'현장ID': site_id, 'updated_fields': list(data.keys()), 'version': now},
+            'data': {'현장ID': site_id, 'updated_fields': list(update_data.keys()), 'version': now},
             'message': '현장 정보가 수정되었습니다',
             'timestamp': datetime.now().isoformat(),
         })
@@ -280,7 +260,8 @@ def update_site(site_id):
 def assign_manager(site_id):
     """소장 배정. 2-3: If-Match 또는 body.version으로 버전 전달 시 충돌 검사"""
     try:
-        site = sheets_service.get_site_by_id(site_id)
+        db = get_db()
+        site = db.get_site_by_id(site_id)
         if not site:
             return jsonify({
                 'success': False,
@@ -297,14 +278,14 @@ def assign_manager(site_id):
                 'error': {'code': 'MISSING_PARAMS', 'message': 'manager_id와 certificate_id가 필요합니다'},
             }), 400
 
-        manager = sheets_service.get_personnel_by_id(manager_id)
+        manager = db.get_personnel_by_id(manager_id)
         if not manager:
             return jsonify({
                 'success': False,
                 'error': {'code': 'MANAGER_NOT_FOUND', 'message': f'인력ID {manager_id}를 찾을 수 없습니다'},
             }), 404
 
-        certificate = sheets_service.get_certificate_by_id(certificate_id)
+        certificate = db.get_certificate_by_id(certificate_id)
         if not certificate:
             return jsonify({
                 'success': False,
@@ -325,8 +306,6 @@ def assign_manager(site_id):
                 'error': {'code': 'VALIDATION_ERROR', 'message': str(e)},
             }), 400
 
-        # 2-3: 낙관적 잠금
-        data = request.json or {}
         version = request.headers.get('If-Match') or data.get('version')
         try:
             get_sync_manager().require_site_version(site_id, version)
@@ -336,27 +315,7 @@ def assign_manager(site_id):
                 'error': {'code': 'CONFLICT', 'message': str(e)},
             }), 409
 
-        site_row = sheets_service.find_row_by_id(SHEET_SITES, site_id)
-        manager_row = sheets_service.find_row_by_id(SHEET_PERSONNEL, manager_id)
-        cert_row = sheets_service.find_row_by_id(SHEET_CERTIFICATES, certificate_id)
-        if not site_row or not manager_row or not cert_row:
-            return jsonify({
-                'success': False,
-                'error': {'code': 'ROW_NOT_FOUND', 'message': '행을 찾을 수 없습니다'},
-            }), 404
-
-        now = datetime.now().strftime('%Y-%m-%d')
-        updates = [
-            {'range': f'{SHEET_SITES}!M{site_row}', 'values': [[manager_id]]},
-            {'range': f'{SHEET_SITES}!P{site_row}', 'values': [[certificate_id]]},
-            {'range': f'{SHEET_SITES}!U{site_row}', 'values': [['배정완료']]},
-            {'range': f'{SHEET_SITES}!W{site_row}', 'values': [[now]]},
-            {'range': f'{SHEET_PERSONNEL}!I{manager_row}', 'values': [[int(manager.get('현재담당현장수') or 0) + 1]]},
-            {'range': f'{SHEET_PERSONNEL}!H{manager_row}', 'values': [['투입중']]},
-            {'range': f'{SHEET_CERTIFICATES}!J{cert_row}', 'values': [['사용중']]},
-            {'range': f'{SHEET_CERTIFICATES}!K{cert_row}', 'values': [[site_id]]},
-        ]
-        sheets_service.batch_update(updates)
+        db.assign_site(site_id, manager_id, certificate_id)
 
         now = datetime.now().strftime('%Y-%m-%d')
         return jsonify({
@@ -387,14 +346,14 @@ def assign_manager(site_id):
 def unassign_manager(site_id):
     """소장 배정 해제. 2-3: If-Match 또는 body.version으로 버전 전달 시 충돌 검사"""
     try:
-        site = sheets_service.get_site_by_id(site_id)
+        db = get_db()
+        site = db.get_site_by_id(site_id)
         if not site:
             return jsonify({
                 'success': False,
                 'error': {'code': 'SITE_NOT_FOUND', 'message': f'현장ID {site_id}를 찾을 수 없습니다'},
             }), 404
 
-        # 2-3: 낙관적 잠금
         data = request.json or {}
         version = request.headers.get('If-Match') or data.get('version')
         try:
@@ -411,29 +370,7 @@ def unassign_manager(site_id):
                 'error': {'code': 'NOT_ASSIGNED', 'message': '배정된 소장이 없습니다'},
             }), 400
 
-        manager_id = site['담당소장ID']
-        cert_id = site.get('사용자격증ID') or ''
-        manager = sheets_service.get_personnel_by_id(manager_id)
-
-        site_row = sheets_service.find_row_by_id(SHEET_SITES, site_id)
-        manager_row = sheets_service.find_row_by_id(SHEET_PERSONNEL, manager_id)
-        cert_row = sheets_service.find_row_by_id(SHEET_CERTIFICATES, cert_id) if cert_id else None
-
-        now = datetime.now().strftime('%Y-%m-%d')
-        updates = [
-            {'range': f'{SHEET_SITES}!M{site_row}', 'values': [['']]},
-            {'range': f'{SHEET_SITES}!P{site_row}', 'values': [['']]},
-            {'range': f'{SHEET_SITES}!U{site_row}', 'values': [['미배정']]},
-            {'range': f'{SHEET_SITES}!W{site_row}', 'values': [[now]]},
-            {'range': f'{SHEET_PERSONNEL}!I{manager_row}', 'values': [[max(0, int(manager.get('현재담당현장수') or 0) - 1)]]},
-        ]
-        if int(manager.get('현재담당현장수') or 0) <= 1:
-            updates.append({'range': f'{SHEET_PERSONNEL}!H{manager_row}', 'values': [['투입가능']]})
-        if cert_id and cert_row:
-            updates.append({'range': f'{SHEET_CERTIFICATES}!J{cert_row}', 'values': [['사용가능']]})
-            updates.append({'range': f'{SHEET_CERTIFICATES}!K{cert_row}', 'values': [['']]})
-
-        sheets_service.batch_update(updates)
+        db.unassign_site(site_id)
 
         now = datetime.now().strftime('%Y-%m-%d')
         return jsonify({

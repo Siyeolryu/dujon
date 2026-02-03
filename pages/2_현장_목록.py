@@ -1,6 +1,6 @@
 """
 현장 목록 - 필터, 검색, 테이블, 배정/해제
-GET /api/sites, GET /api/sites/search, POST assign/unassign, GET /api/personnel
+GET /api/sites, GET /api/sites/search, POST assign/unassign, GET /api/personnel. UI/UX: 로컬호스트 기준.
 """
 import streamlit as st
 import pandas as pd
@@ -14,7 +14,9 @@ from streamlit_utils.api_client import (
     unassign_site,
     check_api_connection,
 )
+from streamlit_utils.theme import apply_localhost_theme
 
+apply_localhost_theme()
 st.title('📋 현장 목록')
 
 if not check_api_connection():

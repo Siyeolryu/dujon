@@ -22,9 +22,10 @@ python -m api.app
 
 ## DB: Google Sheets 연동
 
-현장등록·자격증등록·인력 등 모든 데이터는 **Google Sheets**를 DB로 사용합니다.
+현장등록·소장(인력)등록·자격증등록 등 모든 데이터는 **아래 Google 스프레드시트**에 저장됩니다.
 
-- `.env`에 `SPREADSHEET_ID` 설정 (스프레드시트 URL의 `/d/XXXXXXXX/edit` 에서 XXXXXXXX)
+- **DB 스프레드시트:** [https://docs.google.com/spreadsheets/d/15fAEzkC9FCLA6sG1N--f69r-32WHoYLvmXcwED5xWzM/edit](https://docs.google.com/spreadsheets/d/15fAEzkC9FCLA6sG1N--f69r-32WHoYLvmXcwED5xWzM/edit)
+- `.env`에서 `SPREADSHEET_ID`로 덮어쓰기 가능 (미설정 시 위 스프레드시트 사용)
 - 프로젝트 루트에 `token.pickle` (또는 첫 실행 시 Google 로그인으로 생성)
 - 프로젝트 루트에 `client_secret_xxx.json` (Google Cloud OAuth2 클라이언트)
 - 시트 탭 이름: `.env`에서 `SHEET_SITES`, `SHEET_PERSONNEL`, `SHEET_CERTIFICATES`로 지정 가능  

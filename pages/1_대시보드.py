@@ -1,10 +1,12 @@
 """
 대시보드 - 통계 요약
-GET /api/stats 사용
+GET /api/stats 사용. UI/UX: 로컬호스트 기준.
 """
 import streamlit as st
 from streamlit_utils.api_client import get_stats, check_api_connection
+from streamlit_utils.theme import apply_localhost_theme
 
+apply_localhost_theme()
 st.title('📊 대시보드')
 
 if not check_api_connection():

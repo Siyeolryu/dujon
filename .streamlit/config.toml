@@ -1,4 +1,4 @@
-# Streamlit 설정 (로컬/Streamlit Cloud 공통)
+# Streamlit 설정 (로컬호스트 UI/UX 기준 - Modern Minimal Premium)
 # https://docs.streamlit.io/develop/api-reference/configuration
 
 [server]
@@ -8,3 +8,11 @@ enableCORS = false
 
 [browser]
 gatherUsageStats = false
+
+# 로컬호스트(site-management.html + style.css)와 동일한 톤
+[theme]
+primaryColor = "#495057"
+backgroundColor = "#F8F9FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#2c3e50"
+font = "sans serif"
