@@ -15,21 +15,23 @@ if ROOT not in sys.path:
 
 
 def test_sheets_service():
-    """Sheets 서비스 2-2용 메서드 존재 확인"""
-    print("[2-2] api.services.sheets_service 검증 중...")
+    """DB 서비스(Supabase/Sheets) 통합 인터페이스 메서드 존재 확인"""
+    print("[2-2] api.services.db_service (Supabase/Sheets) 검증 중...")
     try:
-        from api.services.sheets_service import sheets_service
+        from api.services.db_service import get_db
+        db = get_db()
     except Exception as e:
         print(f"      실패: {e}")
         return False
 
-    for method in ('update_cell', 'update_row', 'batch_update', 'find_row_by_id', 'append_row'):
-        if not hasattr(sheets_service, method):
+    read_methods = ('get_all_sites', 'get_site_by_id', 'get_all_personnel', 'get_personnel_by_id',
+                   'get_all_certificates', 'get_certificate_by_id')
+    write_methods = ('create_site', 'update_site', 'create_personnel', 'update_personnel',
+                     'create_certificate', 'update_certificate', 'assign_site', 'unassign_site')
+    for method in read_methods + write_methods:
+        if not hasattr(db, method):
             print(f"      누락: {method}")
             return False
-
-    # find_row_by_id 시그니처: (sheet_name, id_value) -> row_number
-    # append_row 시그니처: (sheet_name, values) -> None
     print("      통과")
     return True
 

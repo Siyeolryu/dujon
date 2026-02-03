@@ -3,6 +3,7 @@
 Google Sheets를 DB로 사용하는 현장·인력·자격증 관리 및 소장 배정 API + HTML 앱
 
 - **저장소**: [Siyeolryu/dujon](https://github.com/Siyeolryu/dujon)
+- **DB 스프레드시트**: [현장배정 DB (Google Sheets)](https://docs.google.com/spreadsheets/d/15fAEzkC9FCLA6sG1N--f69r-32WHoYLvmXcwED5xWzM/edit) — 현장등록·소장등록 등 모든 데이터가 해당 시트에 저장됩니다.
 
 ## 구성
 

@@ -1,10 +1,12 @@
 """
 자격증등록 - 새 자격증 등록
-POST /api/certificates (자격증ID·소유자ID는 API에서 자동 부여)
+POST /api/certificates (자격증ID·소유자ID는 API에서 자동 부여). UI/UX: 로컬호스트 기준.
 """
 import streamlit as st
 from streamlit_utils.api_client import create_certificate, check_api_connection
+from streamlit_utils.theme import apply_localhost_theme
 
+apply_localhost_theme()
 st.title('📜 자격증등록')
 
 if not check_api_connection():

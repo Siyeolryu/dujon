@@ -52,6 +52,6 @@ class SyncManager:
 
 
 def get_sync_manager():
-    """SheetsService 인스턴스로 SyncManager 생성 (api 라우트에서 사용)"""
-    from api.services.sheets_service import sheets_service
-    return SyncManager(sheets_service)
+    """DB 서비스(Supabase/Sheets) 인스턴스로 SyncManager 생성 (api 라우트에서 사용)"""
+    from api.services.db_service import get_db
+    return SyncManager(get_db())

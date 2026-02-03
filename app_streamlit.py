@@ -1,12 +1,14 @@
 """
 현장배정 관리 시스템 - Streamlit 메인 진입점
 기존 Flask API(API_BASE_URL)를 호출하여 운영합니다.
+UI/UX: 로컬호스트(site-management.html + style.css) 기준 적용.
 실행: streamlit run app_streamlit.py
 """
 import os
 import streamlit as st
 from dotenv import load_dotenv
 from streamlit_utils.api_client import check_api_connection
+from streamlit_utils.theme import apply_localhost_theme
 
 load_dotenv()
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:5000')
@@ -17,6 +19,7 @@ st.set_page_config(
     layout='wide',
     initial_sidebar_state='expanded',
 )
+apply_localhost_theme()
 
 st.title('🏗️ 현장배정 관리 시스템')
 st.caption('Streamlit 웹 UI · 좌측 사이드바에서 페이지를 선택하세요.')

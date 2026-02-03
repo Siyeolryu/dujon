@@ -3,7 +3,7 @@
 """
 from datetime import datetime
 from flask import Blueprint, jsonify
-from api.services.sheets_service import sheets_service
+from api.services.db_service import get_db
 
 bp = Blueprint('stats', __name__)
 
@@ -12,9 +12,10 @@ bp = Blueprint('stats', __name__)
 def get_statistics():
     """전체 통계 (현장/인력/자격증)"""
     try:
-        sites = sheets_service.get_all_sites()
-        personnel = sheets_service.get_all_personnel()
-        certificates = sheets_service.get_all_certificates()
+        db = get_db()
+        sites = db.get_all_sites()
+        personnel = db.get_all_personnel()
+        certificates = db.get_all_certificates()
 
         site_stats = {
             'total': len(sites),

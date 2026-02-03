@@ -1,9 +1,9 @@
 """
-인력 관련 API 라우트 (GET)
+인력 관련 API 라우트 (GET / PUT)
 """
 from datetime import datetime
 from flask import Blueprint, jsonify, request
-from api.services.sheets_service import sheets_service, SHEET_PERSONNEL
+from api.services.db_service import get_db
 
 bp = Blueprint('personnel', __name__)
 
@@ -12,7 +12,8 @@ bp = Blueprint('personnel', __name__)
 def get_personnel():
     """인력 목록 조회. 쿼리: status, role"""
     try:
-        personnel = sheets_service.get_all_personnel()
+        db = get_db()
+        personnel = db.get_all_personnel()
 
         status = request.args.get('status')
         role = request.args.get('role')
@@ -39,7 +40,8 @@ def get_personnel():
 def get_personnel_detail(personnel_id):
     """인력 상세 조회"""
     try:
-        person = sheets_service.get_personnel_by_id(personnel_id)
+        db = get_db()
+        person = db.get_personnel_by_id(personnel_id)
         if not person:
             return jsonify({
                 'success': False,
@@ -63,35 +65,21 @@ def get_personnel_detail(personnel_id):
 
 @bp.route('/personnel/<personnel_id>', methods=['PUT'])
 def update_personnel(personnel_id):
-    """인력 정보 수정 (시트2: A~L)"""
+    """인력 정보 수정"""
     try:
-        person = sheets_service.get_personnel_by_id(personnel_id)
+        db = get_db()
+        person = db.get_personnel_by_id(personnel_id)
         if not person:
             return jsonify({
                 'success': False,
                 'error': {'code': 'PERSONNEL_NOT_FOUND', 'message': f'인력ID {personnel_id}를 찾을 수 없습니다'},
             }), 404
 
-        row_num = sheets_service.find_row_by_id(SHEET_PERSONNEL, personnel_id)
-        if not row_num:
-            return jsonify({
-                'success': False,
-                'error': {'code': 'ROW_NOT_FOUND', 'message': '행을 찾을 수 없습니다'},
-            }), 404
-
         data = request.json or {}
-        column_map = {
-            '성명': 'B', '직책': 'C', '소속': 'D', '연락처': 'E', '이메일': 'F',
-            '보유자격증': 'G', '현재상태': 'H', '현재담당현장수': 'I', '비고': 'J',
-            '입사일': 'K', '등록일': 'L',
-        }
-        updates = []
-        for field, col in column_map.items():
-            if field in data:
-                updates.append({'range': f'{SHEET_PERSONNEL}!{col}{row_num}', 'values': [[data[field]]]})
-
-        if updates:
-            sheets_service.batch_update(updates)
+        allowed = {'성명', '직책', '소속', '연락처', '이메일', '보유자격증', '현재상태', '현재담당현장수', '비고', '입사일', '등록일'}
+        update_data = {k: v for k, v in data.items() if k in allowed}
+        if update_data:
+            db.update_personnel(personnel_id, update_data)
 
         return jsonify({
             'success': True,

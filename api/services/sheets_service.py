@@ -10,8 +10,9 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-# 프로젝트 루트에서 실행 가정. SPREADSHEET_ID는 .env에 설정 (실제 값은 코드에 두지 않음)
-SPREADSHEET_ID = os.getenv('SPREADSHEET_ID', '').strip()
+# 프로젝트 루트에서 실행 가정. DB는 아래 스프레드시트 사용 ( .env 에서 덮어쓰기 가능 )
+# https://docs.google.com/spreadsheets/d/15fAEzkC9FCLA6sG1N--f69r-32WHoYLvmXcwED5xWzM/edit
+SPREADSHEET_ID = (os.getenv('SPREADSHEET_ID') or '15fAEzkC9FCLA6sG1N--f69r-32WHoYLvmXcwED5xWzM').strip()
 
 # 시트 탭 이름 (Google Sheets 구축가이드 기준: 현장정보, 인력풀, 자격증풀. 미설정 시 시트1/시트2/시트3)
 SHEET_SITES = os.getenv('SHEET_SITES', '시트1').strip() or '시트1'
