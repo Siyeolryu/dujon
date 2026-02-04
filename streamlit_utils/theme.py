@@ -151,8 +151,38 @@ hr {
     background: #495057 !important;
     color: #fff !important;
     border-radius: 8px !important;
-    padding: 10px 20px !important;
+    padding: 10px 24px !important;
     font-weight: 500 !important;
+    font-size: 14px !important;
+    min-width: 120px !important;
+}
+[data-testid="stFormSubmitButton"] button:hover {
+    background: #343a40 !important;
+}
+/* 폼 컨테이너 최적화 */
+[data-testid="stForm"] {
+    max-width: 800px !important;
+    margin: 0 auto !important;
+}
+/* 컬럼 간격 조정 */
+[data-testid="column"] {
+    gap: 16px;
+}
+/* 입력 필드 간격 조정 */
+[data-testid="stTextInput"],
+[data-testid="stSelectbox"],
+[data-testid="stTextArea"] {
+    margin-bottom: 16px;
+}
+/* 섹션 제목 스타일 */
+.stSubheader {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #1a1d21 !important;
+    margin-top: 24px !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid #e9ecef !important;
 }
 /* 상태 배지 스타일 */
 .status-badge {

@@ -19,6 +19,96 @@ from streamlit_utils.theme import apply_localhost_theme
 
 apply_localhost_theme()
 
+# 필터 탭 스타일 추가
+st.markdown("""
+<style>
+    /* 필터 탭 스타일 */
+    .filter-tab-group {
+        margin-bottom: 16px;
+    }
+    .filter-tab-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 6px;
+        display: block;
+    }
+    /* Radio 버튼을 탭처럼 스타일링 */
+    [data-testid="stRadio"] {
+        margin-bottom: 12px !important;
+    }
+    [data-testid="stRadio"] > div {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 4px !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    [data-testid="stRadio"] > div > label {
+        padding: 6px 12px !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px !important;
+        background: #fff !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        color: #495057 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        margin: 0 !important;
+        flex: 0 0 auto !important;
+        min-width: auto !important;
+        width: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        line-height: 1.4 !important;
+    }
+    [data-testid="stRadio"] > div > label:hover {
+        background: #f8f9fa !important;
+        border-color: #adb5bd !important;
+    }
+    [data-testid="stRadio"] > div > label:has(input[type="radio"]:checked),
+    [data-testid="stRadio"] > div > label:has(input[checked]) {
+        background: #495057 !important;
+        border-color: #495057 !important;
+        color: #fff !important;
+    }
+    [data-testid="stRadio"] input[type="radio"] {
+        margin: 0 4px 0 0 !important;
+        width: auto !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+    }
+    [data-testid="stRadio"] input[type="radio"]:checked {
+        accent-color: #fff !important;
+    }
+    [data-testid="stRadio"] > div > label > div[data-testid="stMarkdownContainer"] {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    /* 필터 섹션 레이아웃 최적화 */
+    .filter-section-container {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 18px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        margin-bottom: 20px;
+    }
+    /* 컬럼 간격 최적화 */
+    [data-testid="column"] {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    /* 필터 행 간격 조정 */
+    .filter-row {
+        margin-bottom: 12px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # 세션 상태 초기화
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 1
@@ -55,41 +145,63 @@ initial_status = query_params.get('status', [''])[0] if 'status' in query_params
 initial_company = query_params.get('company', [''])[0] if 'company' in query_params else ''
 
 # ========== 필터 섹션 ==========
+st.markdown('<div class="filter-section-container">', unsafe_allow_html=True)
 st.subheader('🔍 필터 및 검색')
 
-filter_col1, filter_col2, filter_col3, filter_col4 = st.columns([1.2, 1.2, 1.2, 2])
-with filter_col1:
-    company = st.selectbox(
+# 필터 탭 그룹 - 최적화된 레이아웃
+filter_row1 = st.columns([1.1, 1.1, 1.3, 2.5])
+with filter_row1[0]:
+    st.markdown('<div class="filter-tab-label">회사구분</div>', unsafe_allow_html=True)
+    company_options = ['', '더존종합건설', '더존하우징']
+    company_index = 1 if initial_company == '더존종합건설' else (2 if initial_company == '더존하우징' else 0)
+    company_radio = st.radio(
         '회사구분',
-        ['', '더존종합건설', '더존하우징'],
+        company_options,
         format_func=lambda x: {'': '전체', '더존종합건설': '종합건설', '더존하우징': '하우징'}.get(x, x),
-        key='filter_company',
-        index=1 if initial_company == '더존종합건설' else (2 if initial_company == '더존하우징' else 0),
+        key='filter_company_radio',
+        index=company_index,
+        horizontal=True,
+        label_visibility='collapsed'
     )
-with filter_col2:
+    company = company_radio
+
+with filter_row1[1]:
+    st.markdown('<div class="filter-tab-label">배정상태</div>', unsafe_allow_html=True)
     status_options = ['', '배정완료', '미배정']
     status_index = status_options.index(initial_status) if initial_status in status_options else 0
-    status = st.selectbox(
+    status_radio = st.radio(
         '배정상태',
         status_options,
         format_func=lambda x: x or '전체',
-        key='filter_status',
+        key='filter_status_radio',
         index=status_index,
+        horizontal=True,
+        label_visibility='collapsed'
     )
-with filter_col3:
-    state = st.selectbox(
+    status = status_radio
+
+with filter_row1[2]:
+    st.markdown('<div class="filter-tab-label">현장상태</div>', unsafe_allow_html=True)
+    state_options = ['', '건축허가', '착공예정', '공사 중', '공사 중단', '준공']
+    state_radio = st.radio(
         '현장상태',
-        ['', '건축허가', '착공예정', '공사 중', '공사 중단', '준공'],
+        state_options,
         format_func=lambda x: x or '전체',
-        key='filter_state',
+        key='filter_state_radio',
+        horizontal=True,
+        label_visibility='collapsed'
     )
-with filter_col4:
+    state = state_radio
+
+with filter_row1[3]:
     search_input = st.text_input(
         '현장명·주소 검색',
         placeholder='검색어 입력 (실시간 검색)',
         key='search_input',
         value=st.session_state.search_query,
     )
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # 실시간 검색 debounce 처리
 if search_input != st.session_state.search_query:
@@ -127,9 +239,9 @@ with st.expander('📅 고급 필터 (날짜 범위, 담당소장)', expanded=Fa
         )
     
     if st.button('🔄 필터 초기화', use_container_width=True):
-        st.session_state.filter_company = ''
-        st.session_state.filter_status = ''
-        st.session_state.filter_state = ''
+        st.session_state.filter_company_radio = ''
+        st.session_state.filter_status_radio = ''
+        st.session_state.filter_state_radio = ''
         st.session_state.filter_manager = ''
         st.session_state.filter_date_start = None
         st.session_state.filter_date_end = None
