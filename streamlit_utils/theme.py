@@ -111,10 +111,10 @@ section[data-testid="stSidebar"] .stMarkdown {
     font-size: 13px !important;
     color: #6c757d !important;
 }
-/* 데이터프레임 = 로컬 site-table */
+/* 데이터프레임 = 로컬 site-table, 스크롤 시 헤더 고정 */
 [data-testid="stDataFrame"] {
     border-radius: 12px;
-    overflow: hidden;
+    overflow: auto;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 [data-testid="stDataFrame"] table {
@@ -128,6 +128,11 @@ section[data-testid="stSidebar"] .stMarkdown {
     font-weight: 600 !important;
     padding: 12px 14px !important;
     border-bottom: 1px solid #e9ecef !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1 !important;
+    background: #f8f9fa !important;
+    box-shadow: 0 1px 0 #e9ecef !important;
 }
 [data-testid="stDataFrame"] td {
     padding: 12px 14px !important;
@@ -146,9 +151,10 @@ section[data-testid="stSidebar"] .stMarkdown {
 hr {
     border-color: #e9ecef !important;
 }
-/* 폼 제출 버튼 영역 */
-[data-testid="stFormSubmitButton"] button {
-    background: #495057 !important;
+/* CTA(주요 액션): 등록·배정·저장 = Primary 파란 */
+[data-testid="stFormSubmitButton"] button,
+[data-testid="stButton"] button[kind="primary"] {
+    background: #3b82f6 !important;
     color: #fff !important;
     border-radius: 8px !important;
     padding: 10px 24px !important;
@@ -156,14 +162,22 @@ hr {
     font-size: 14px !important;
     min-width: 120px !important;
 }
-[data-testid="stFormSubmitButton"] button:hover {
-    background: #343a40 !important;
+[data-testid="stFormSubmitButton"] button:hover,
+[data-testid="stButton"] button[kind="primary"]:hover {
+    background: #2563eb !important;
+    color: #fff !important;
 }
-/* 폼 컨테이너 최적화 */
+/* 폼 컨테이너 + 공통 폼/탭 클래스 (페이지 인라인 중복 제거) */
 [data-testid="stForm"] {
     max-width: 800px !important;
     margin: 0 auto !important;
 }
+.form-section-divider { border-top: 1px solid #e9ecef; margin: 24px 0 20px 0; padding-top: 20px; }
+.required-section-title { font-size: 16px; font-weight: 600; color: #1a1d21; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; }
+.optional-section-title { font-size: 16px; font-weight: 600; color: #6c757d; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e9ecef; }
+.form-submit-area { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e9ecef; }
+.tab-select-label { font-size: 13px; font-weight: 600; color: #495057; margin-bottom: 12px; display: block; }
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] { display: flex; justify-content: flex-end; margin-top: 20px; }
 /* 컬럼 간격 조정 */
 [data-testid="column"] {
     gap: 16px;
@@ -233,21 +247,38 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] .stButton > button {
     width: 100%;
 }
-/* 라디오 탭 스타일 - 선택 시 파란 계열(다른 탭과 동일) */
+/* 라디오 탭: 필터/선택 = 보조 계층(회색), CTA와 시각적 구분 */
+[data-testid="stRadio"] > div { display: flex !important; flex-wrap: wrap; gap: 6px !important; background: transparent !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+[data-testid="stRadio"] > div > label {
+    padding: 8px 14px !important; border: 1px solid #dee2e6 !important; border-radius: 8px !important; background: #fff !important;
+    font-size: 14px !important; font-weight: 500 !important; color: #495057 !important; cursor: pointer !important;
+    transition: all 0.2s ease !important; margin: 0 !important; flex: 0 0 auto !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+}
 [data-testid="stRadio"] > div > label:has(input[type="radio"]:checked),
 [data-testid="stRadio"] > div > label:has(input[checked]) {
-    background: #3b82f6 !important;
-    border-color: #3b82f6 !important;
+    background: #495057 !important;
+    border-color: #495057 !important;
     color: #fff !important;
 }
-[data-testid="stRadio"] > div > label.tab-active {
-    background: #3b82f6 !important;
-    border-color: #3b82f6 !important;
-    color: #fff !important;
+[data-testid="stRadio"] > div > label.tab-active { background: #495057 !important; border-color: #495057 !important; color: #fff !important; }
+[data-testid="stRadio"] > div > label:hover { background: #f8f9fa !important; border-color: #adb5bd !important; }
+/* 접근성: 키보드 포커스 시 아웃라인 */
+[data-testid="stRadio"] > div > label:focus-visible,
+[data-testid="stRadio"] input:focus-visible {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 2px !important;
 }
-[data-testid="stRadio"] > div > label:hover {
-    background: #f8f9fa !important;
-    border-color: #adb5bd !important;
+[data-testid="stButton"] button:focus-visible,
+[data-testid="stFormSubmitButton"] button:focus-visible {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 2px !important;
+}
+/* 반응형: 작은 화면에서 네비·컬럼 보기 좋게 */
+@media (max-width: 768px) {
+    .top-nav { flex-direction: column; align-items: stretch; }
+    .top-nav a { text-align: center; }
+    [data-testid="column"] { min-width: 0 !important; }
 }
 /* 사이드바 완전 숨김 (사용 안 함) */
 section[data-testid="stSidebar"],
@@ -271,12 +302,16 @@ button[kind="header"] {
 """
 
 # 상단 네비게이션 링크 (사이드바 대체)
+# Streamlit은 pages/ 디렉토리의 파일명을 기반으로 URL 생성
+# 파일명: 2_현장_목록.py → URL: /2_현장_목록
+# NAV_LINKS의 path는 실제 파일명(확장자 제외)과 일치해야 함
 NAV_LINKS = [
-    ('🏠 대시보드', '대시보드'),
-    ('📋 현장 목록', '현장_목록'),
-    ('➕ 현장등록', '현장등록'),
-    ('📜 자격증등록', '자격증등록'),
-    ('👥 투입가능인원 상세', '투입가능인원_상세'),
+    ('🏠 대시보드', '1_dashboard'),  # 1_dashboard.py 또는 1_대시보드.py
+    ('📋 현장 목록', '2_현장_목록'),  # 2_현장_목록.py
+    ('➕ 현장등록', '3_현장등록'),  # 3_현장등록.py
+    ('📜 자격증등록', '4_자격증등록'),  # 4_자격증등록.py
+    ('👥 투입가능인원 상세', '8_투입가능인원_상세'),  # 8_투입가능인원_상세.py
+    ('🖥️ Streamlit App', '9_streamlit_app'),  # 9_streamlit_app.py
 ]
 
 
@@ -285,19 +320,53 @@ def apply_localhost_theme():
     st.markdown(LOCALHOST_CSS, unsafe_allow_html=True)
 
 
-def render_top_nav():
-    """상단 네비게이션 바 렌더링 (사이드바 미사용 시 페이지 이동용)."""
-    st.markdown("""
+def render_top_nav(current_page=None):
+    """상단 네비게이션 바 렌더링 (사이드바 미사용 시 페이지 이동용).
+    current_page: 현재 페이지의 URL path(identifier). None이면 홈.
+    Streamlit 파일명 기반 URL: 2_현장_목록.py → /2_현장_목록
+    """
+    # #region agent log - 네비게이션 URL 불일치 확인용
+    import os
+    import json
+    from datetime import datetime
+    log_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.cursor', 'debug.log')
+    try:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                'location': 'theme.py:render_top_nav',
+                'message': 'Navigation render',
+                'data': {
+                    'current_page': current_page,
+                    'nav_links': NAV_LINKS,
+                    'expected_urls': [f'/{path}' for _, path in NAV_LINKS]
+                },
+                'timestamp': int(datetime.now().timestamp() * 1000),
+                'sessionId': 'debug-session',
+                'runId': 'nav-check',
+                'hypothesisId': 'nav-url-mismatch'
+            }, ensure_ascii=False) + '\n')
+    except Exception:
+        pass
+    # #endregion
+    
+    home_class = "active" if current_page is None else ""
+    parts = [f'<a href="/" class="{home_class}">🏗️ 홈</a>']
+    for label, path in NAV_LINKS:
+        link_class = "active" if current_page == path else ""
+        parts.append(f'<a href="/{path}" class="{link_class}">{label}</a>')
+    nav_items = "\n        ".join(parts)
+    st.markdown(f"""
     <style>
-    .top-nav {
+    .top-nav {{
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 20px;
         padding: 12px 0;
         border-bottom: 1px solid #e9ecef;
-    }
-    .top-nav a {
+    }}
+    .top-nav a {{
         color: #495057;
         text-decoration: none;
         padding: 8px 14px;
@@ -307,19 +376,25 @@ def render_top_nav():
         background: #fff;
         border: 1px solid #dee2e6;
         transition: all 0.2s;
-    }
-    .top-nav a:hover {
+    }}
+    .top-nav a:hover {{
         background: #f8f9fa;
         border-color: #3b82f6;
         color: #3b82f6;
-    }
+    }}
+    .top-nav a.active {{
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
+        color: #fff !important;
+        font-weight: 600;
+    }}
+    .top-nav a.active:hover {{
+        background: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #fff !important;
+    }}
     </style>
     <nav class="top-nav">
-        <a href="/">🏗️ 홈</a>
-        <a href="/대시보드">🏠 대시보드</a>
-        <a href="/현장_목록">📋 현장 목록</a>
-        <a href="/현장등록">➕ 현장등록</a>
-        <a href="/자격증등록">📜 자격증등록</a>
-        <a href="/투입가능인원_상세">👥 투입가능인원 상세</a>
+        {nav_items}
     </nav>
     """, unsafe_allow_html=True)

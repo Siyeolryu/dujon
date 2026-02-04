@@ -14,7 +14,7 @@ load_dotenv()
 
 # 주의: set_page_config는 메인 스크립트(app_streamlit.py)에서만 호출. 페이지에서는 호출 시 네비게이션 오류 발생.
 apply_localhost_theme()
-render_top_nav()
+render_top_nav(current_page="9_streamlit_app")
 
 # 환경 감지
 env = _detect_environment()

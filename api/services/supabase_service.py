@@ -60,7 +60,7 @@ def _transform_site(site_row: Dict, assignments: List[Dict] = None, cert_assignm
         "현장ID": site_row.get("legacy_id") or site_row.get("id") or "",
         "현장명": site_row.get("name") or "",
         "건축주명": site_row.get("owner_name") or "",
-        "회사구분": company.get("name") if company else "",
+        "회사구분": (company.get("name") if company and isinstance(company, dict) else "") or (company.get("short_name") if company and isinstance(company, dict) else ""),
         "주소": site_row.get("address") or "",
         "위도": str(site_row.get("latitude")) if site_row.get("latitude") is not None else "",
         "경도": str(site_row.get("longitude")) if site_row.get("longitude") is not None else "",
@@ -69,13 +69,13 @@ def _transform_site(site_row: Dict, assignments: List[Dict] = None, cert_assignm
         "준공일": _format_date(site_row.get("end_date")),
         "현장상태": site_row.get("status") or "건축허가",
         "특이사항": site_row.get("notes") or "",
-        "담당소장ID": (active_assignment.get("personnel", {}) or {}).get("legacy_id") or (active_assignment.get("personnel", {}) or {}).get("id") if active_assignment and active_assignment.get("personnel") else "",
-        "담당소장명": (active_assignment.get("personnel", {}) or {}).get("name") if active_assignment and active_assignment.get("personnel") else "",
-        "담당소장연락처": (active_assignment.get("personnel", {}) or {}).get("phone") if active_assignment and active_assignment.get("personnel") else "",
-        "사용자격증ID": (active_cert_assignment.get("certificate", {}) or {}).get("legacy_id") or (active_cert_assignment.get("certificate", {}) or {}).get("id") if active_cert_assignment and active_cert_assignment.get("certificate") else "",
-        "자격증명": ((active_cert_assignment.get("certificate", {}) or {}).get("cert_type") or {}).get("name") if active_cert_assignment and active_cert_assignment.get("certificate") else "",
-        "자격증소유자명": ((active_cert_assignment.get("certificate", {}) or {}).get("personnel") or {}).get("name") if active_cert_assignment and active_cert_assignment.get("certificate") else "",
-        "자격증소유자연락처": ((active_cert_assignment.get("certificate", {}) or {}).get("personnel") or {}).get("phone") if active_cert_assignment and active_cert_assignment.get("certificate") else "",
+        "담당소장ID": (active_assignment.get("personnel") or {}).get("legacy_id") or (active_assignment.get("personnel") or {}).get("id") if active_assignment and active_assignment.get("personnel") else "",
+        "담당소장명": (active_assignment.get("personnel") or {}).get("name") if active_assignment and active_assignment.get("personnel") else "",
+        "담당소장연락처": (active_assignment.get("personnel") or {}).get("phone") if active_assignment and active_assignment.get("personnel") else "",
+        "사용자격증ID": (active_cert_assignment.get("certificate") or {}).get("legacy_id") or (active_cert_assignment.get("certificate") or {}).get("id") if active_cert_assignment and active_cert_assignment.get("certificate") else "",
+        "자격증명": ((active_cert_assignment.get("certificate") or {}).get("cert_type") or {}).get("name") if active_cert_assignment and active_cert_assignment.get("certificate") else "",
+        "자격증소유자명": ((active_cert_assignment.get("certificate") or {}).get("personnel") or {}).get("name") if active_cert_assignment and active_cert_assignment.get("certificate") else "",
+        "자격증소유자연락처": ((active_cert_assignment.get("certificate") or {}).get("personnel") or {}).get("phone") if active_cert_assignment and active_cert_assignment.get("certificate") else "",
         "준공필증파일URL": site_row.get("completion_doc_url") or "",
         "배정상태": site_row.get("assignment_status") or "미배정",
         "등록일": _format_date(site_row.get("created_at")),
@@ -99,7 +99,7 @@ def _transform_personnel(personnel_row: Dict, company: Dict = None) -> Dict:
         "인력ID": personnel_row.get("legacy_id") or personnel_row.get("id") or "",
         "성명": personnel_row.get("name") or "",
         "직책": personnel_row.get("position") or "",
-        "소속": company.get("name") if company else "",
+        "소속": (company.get("name") if company and isinstance(company, dict) else "") or (company.get("short_name") if company and isinstance(company, dict) else ""),
         "연락처": personnel_row.get("phone") or "",
         "이메일": personnel_row.get("email") or "",
         "보유자격증": "",  # 정규화된 스키마에서는 별도 조회 필요
@@ -240,11 +240,6 @@ class SupabaseService:
             # 정렬
             query = query.order("created_at", desc=True)
             
-            # 전체 개수 조회 (필터 적용 후)
-            count_query = query.select("id", count="exact")
-            count_result = count_query.execute()
-            total_count = count_result.count if hasattr(count_result, 'count') else len(count_result.data or [])
-            
             # 페이지네이션 적용
             if limit:
                 query = query.range(offset, offset + limit - 1)
@@ -253,7 +248,6 @@ class SupabaseService:
             
             sites = []
             for site_row in (r.data or []):
-                # 클라이언트 사이드 필터 (status, state)
                 site = _transform_site(
                     site_row,
                     assignments=site_row.get("assignments", []),
@@ -261,19 +255,30 @@ class SupabaseService:
                     company=site_row.get("company")
                 )
                 
-                # 배정상태 필터
+                # 배정상태 필터 (클라이언트 사이드)
                 if status and site.get('배정상태') != status:
                     continue
                 
-                # 현장상태 필터
+                # 현장상태 필터 (클라이언트 사이드)
                 if state and site.get('현장상태') != state:
                     continue
                 
                 sites.append(site)
             
+            # 전체 개수 조회 (필터 적용 전, 서버 사이드 필터만 적용)
+            # 클라이언트 사이드 필터(status, state)는 정확한 total 계산이 어려우므로
+            # 서버 사이드 필터(company)만 적용한 total 반환
+            count_query = client.table(TABLE_SITES).select("id", count="exact")
+            if company:
+                company_query = client.table("companies").select("id").or_(f"name.eq.{company},short_name.eq.{company}").limit(1).execute()
+                if company_query.data:
+                    count_query = count_query.eq("company_id", company_query.data[0]["id"])
+            count_result = count_query.execute()
+            total_count = count_result.count if hasattr(count_result, 'count') else len(count_result.data or [])
+            
             return {
                 'data': sites,
-                'total': total_count,
+                'total': total_count,  # 주의: 클라이언트 사이드 필터(status, state)는 total에 반영되지 않음
             }
         except Exception as e:
             # 폴백: 기존 방식

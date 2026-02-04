@@ -74,12 +74,20 @@ with st.form('cert_form'):
     st.markdown('<div class="form-section-divider"></div>', unsafe_allow_html=True)
     st.markdown('<div class="optional-section-title">선택 입력</div>', unsafe_allow_html=True)
     
-    # 날짜 필드 (st.date_input으로 형식 오류 방지)
+    # 날짜 필드들을 2열로 배치
     col3, col4 = st.columns(2)
     with col3:
-        issued_date = st.date_input('취득일', value=None, help='자격증 취득일을 선택하세요', format='YYYY-MM-DD')
+        issued_date = st.text_input(
+            '취득일',
+            placeholder='YYYY-MM-DD',
+            help='자격증 취득일을 입력하세요 (예: 2024-01-15)'
+        )
     with col4:
-        expiry_date = st.date_input('유효기간', value=None, help='자격증 유효기간 만료일을 선택하세요', format='YYYY-MM-DD')
+        expiry_date = st.text_input(
+            '유효기간',
+            placeholder='YYYY-MM-DD',
+            help='자격증 유효기간 만료일을 입력하세요 (예: 2029-01-15)'
+        )
     
     # 사용여부 (탭 형태)
     st.markdown('<div class="tab-select-label">사용여부</div>', unsafe_allow_html=True)
@@ -118,10 +126,10 @@ if submitted:
         # 선택 입력 필드 추가
         if cert_number and cert_number.strip():
             payload['자격증번호'] = cert_number.strip()
-        if issued_date:
-            payload['취득일'] = issued_date.strftime('%Y-%m-%d')
-        if expiry_date:
-            payload['유효기간'] = expiry_date.strftime('%Y-%m-%d')
+        if issued_date and issued_date.strip():
+            payload['취득일'] = issued_date.strip()
+        if expiry_date and expiry_date.strip():
+            payload['유효기간'] = expiry_date.strip()
         
         data, err = create_certificate(payload)
         if err:
@@ -130,7 +138,3 @@ if submitted:
             st.success('자격증이 등록되었습니다.')
             if data:
                 st.info(f"부여된 자격증ID: {data.get('자격증ID', '-')}, 소유자ID: {data.get('소유자ID', '-')}")
-            st.caption('자격증 목록·투입가능인원에서 확인하세요.')
-            st.markdown('[📜 자격증 등록](/자격증등록) · [👥 투입가능인원 상세](/투입가능인원_상세)')
-            if st.button('➕ 다른 자격증 등록'):
-                st.rerun()
