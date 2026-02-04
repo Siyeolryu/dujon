@@ -62,9 +62,12 @@ def render_html_app(html_file='site-management.html', height=800, key=None):
             if not api_base_url:
                 api_base_url = '/api'
         else:
-            # 로컬 개발 환경
+            # 로컬 개발 환경 - 명확하게 절대 URL 사용
             if not api_base_url:
-                api_base_url = 'http://localhost:5000'
+                api_base_url = 'http://localhost:5000/api'  # /api 포함하여 명확하게 설정
+            elif not api_base_url.endswith('/api'):
+                # API_BASE_URL이 설정되어 있지만 /api가 없으면 추가
+                api_base_url = api_base_url.rstrip('/') + '/api'
         
         # CSS/JS 인라인화 및 Streamlit 준비
         html_content = prepare_html_for_streamlit(html_content, api_base_url)

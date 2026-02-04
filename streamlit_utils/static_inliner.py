@@ -29,6 +29,7 @@ def inline_css_and_js(html_content):
     css_pattern = r'<link[^>]*rel=["\']stylesheet["\'][^>]*href=["\']([^"\']+)["\'][^>]*>'
     css_matches = re.finditer(css_pattern, html_content)
     
+    css_files_processed = []
     for match in reversed(list(css_matches)):  # 역순으로 처리하여 인덱스 변경 방지
         css_path = match.group(1)
         # 상대 경로 처리
@@ -42,13 +43,17 @@ def inline_css_and_js(html_content):
                     # <style> 태그로 교체
                     style_tag = f'<style>\n{css_content}\n</style>'
                     html_content = html_content[:match.start()] + style_tag + html_content[match.end():]
+                    css_files_processed.append(css_path)
                 except Exception as e:
-                    print(f"CSS 파일 로드 실패: {css_path}, {e}")
+                    print(f"⚠️ CSS 파일 로드 실패: {css_path}, {e}")
+            else:
+                print(f"⚠️ CSS 파일을 찾을 수 없습니다: {full_path}")
     
     # JS 파일 인라인화 (외부 CDN은 제외)
     js_pattern = r'<script[^>]*src=["\']([^"\']+)["\'][^>]*></script>'
     js_matches = re.finditer(js_pattern, html_content)
     
+    js_files_processed = []
     for match in reversed(list(js_matches)):
         js_path = match.group(1)
         # CDN이나 외부 스크립트는 제외
@@ -68,8 +73,15 @@ def inline_css_and_js(html_content):
                 # <script> 태그로 교체
                 script_tag = f'<script>\n{js_content}\n</script>'
                 html_content = html_content[:match.start()] + script_tag + html_content[match.end():]
+                js_files_processed.append(js_path)
             except Exception as e:
-                print(f"JS 파일 로드 실패: {js_path}, {e}")
+                print(f"⚠️ JS 파일 로드 실패: {js_path}, {e}")
+        else:
+            print(f"⚠️ JS 파일을 찾을 수 없습니다: {full_path}")
+    
+    # 처리 결과 로그 (디버깅용)
+    if css_files_processed or js_files_processed:
+        print(f"✅ 인라인화 완료: CSS {len(css_files_processed)}개, JS {len(js_files_processed)}개")
     
     return html_content
 
@@ -80,7 +92,7 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api'):
     
     Args:
         html_content: 원본 HTML 내용
-        api_base_url: API 기본 URL
+        api_base_url: API 기본 URL (예: 'http://localhost:5000/api' 또는 '/api')
         
     Returns:
         Streamlit용 HTML 내용
@@ -92,27 +104,46 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api'):
         import streamlit as st
         st.warning(f"CSS/JS 인라인화 중 일부 오류 발생: {str(e)} (계속 진행합니다)")
     
+    # API URL 정규화 (로컬호스트인 경우 명확하게 설정)
+    is_localhost = api_base_url.startswith('http://localhost') or api_base_url.startswith('http://127.0.0.1')
+    
     # API 설정 주입 (기존 설정이 있으면 교체)
     # Streamlit iframe 내부에서도 올바른 API URL 사용하도록 설정
     api_config_script = f'''
     <script>
         // Streamlit 환경에서 API URL 설정 (가장 먼저 실행)
         (function() {{
-            // 절대 URL 설정 (상대 경로인 경우 현재 호스트 사용)
+            // API URL 결정
             let apiUrl = '{api_base_url}';
-            if (apiUrl.startsWith('/')) {{
+            
+            // 로컬호스트인 경우 그대로 사용
+            if (apiUrl.startsWith('http://localhost') || apiUrl.startsWith('http://127.0.0.1')) {{
+                // 이미 절대 URL이므로 그대로 사용
+                console.log('[Streamlit] API URL 설정:', apiUrl);
+            }} else if (apiUrl.startsWith('/')) {{
                 // 상대 경로인 경우 현재 페이지의 프로토콜과 호스트 사용
                 // Streamlit iframe 내부에서는 부모 창의 origin 사용 시도
                 try {{
-                    if (window.parent && window.parent.location && window.parent !== window) {{
+                    // 로컬 개발 환경에서는 localhost:5000 사용
+                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {{
+                        // Streamlit은 보통 8501 포트, API는 5000 포트
+                        apiUrl = 'http://localhost:5000' + apiUrl;
+                    }} else if (window.parent && window.parent.location && window.parent !== window) {{
+                        // 부모 창이 있으면 부모의 origin 사용
                         apiUrl = window.parent.location.origin + apiUrl;
                     }} else {{
                         apiUrl = window.location.origin + apiUrl;
                     }}
                 }} catch(e) {{
-                    // Cross-origin 제한으로 부모 접근 불가 시 현재 origin 사용
-                    apiUrl = window.location.origin + apiUrl;
+                    // Cross-origin 제한으로 부모 접근 불가 시
+                    // 로컬 개발 환경 가정
+                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {{
+                        apiUrl = 'http://localhost:5000' + apiUrl;
+                    }} else {{
+                        apiUrl = window.location.origin + apiUrl;
+                    }}
                 }}
+                console.log('[Streamlit] API URL 변환:', apiUrl);
             }}
             
             // 전역 변수 설정 (config.js보다 먼저)
@@ -126,6 +157,11 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api'):
             window.CONFIG.API_MODE = 'flask';
             window.CONFIG.API_BASE_URL = apiUrl;
             
+            console.log('[Streamlit] CONFIG 설정 완료:', {{
+                API_MODE: window.CONFIG.API_MODE,
+                API_BASE_URL: window.CONFIG.API_BASE_URL
+            }});
+            
             // config.js가 로드된 후에도 이 값이 우선되도록 감시
             const originalConfig = window.CONFIG;
             let configProxy = new Proxy(originalConfig, {{
@@ -136,11 +172,11 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api'):
                 }},
                 set: function(target, prop, value) {{
                     if (prop === 'API_MODE' && value !== 'flask') {{
-                        console.warn('API_MODE는 Streamlit 환경에서 flask로 고정됩니다.');
+                        console.warn('[Streamlit] API_MODE는 flask로 고정됩니다.');
                         return true;
                     }}
                     if (prop === 'API_BASE_URL') {{
-                        console.warn('API_BASE_URL은 Streamlit 환경에서 고정됩니다.');
+                        console.warn('[Streamlit] API_BASE_URL은 고정됩니다:', apiUrl);
                         return true;
                     }}
                     target[prop] = value;
@@ -148,15 +184,27 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api'):
                 }}
             }});
             
-            // config.js 로드 후 CONFIG 객체 교체
+            // config.js 로드 후 CONFIG 객체 강제 업데이트
             setTimeout(function() {{
-                if (window.CONFIG && window.CONFIG !== configProxy) {{
+                if (window.CONFIG) {{
                     Object.assign(window.CONFIG, {{
                         API_MODE: 'flask',
                         API_BASE_URL: apiUrl
                     }});
+                    console.log('[Streamlit] CONFIG 강제 업데이트 완료:', window.CONFIG);
                 }}
             }}, 100);
+            
+            // DOMContentLoaded 시에도 다시 확인
+            if (document.readyState === 'loading') {{
+                document.addEventListener('DOMContentLoaded', function() {{
+                    if (window.CONFIG) {{
+                        window.CONFIG.API_MODE = 'flask';
+                        window.CONFIG.API_BASE_URL = apiUrl;
+                        console.log('[Streamlit] DOMContentLoaded 후 CONFIG 재설정:', window.CONFIG);
+                    }}
+                }});
+            }}
         }})();
     </script>
 '''
@@ -212,5 +260,39 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api'):
 '''
     if '</head>' in html_content:
         html_content = html_content.replace('</head>', style_addition + '</head>')
+    
+    # API 호출 에러 핸들링 개선 스크립트 추가
+    api_error_handler = '''
+    <script>
+        // API 호출 에러 핸들링 개선
+        (function() {
+            // 기존 fetch를 래핑하여 에러 처리 개선
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                const url = args[0];
+                const options = args[1] || {};
+                
+                // API 호출인 경우 (로컬호스트 API)
+                if (typeof url === 'string' && (url.includes('localhost:5000') || url.includes('127.0.0.1:5000'))) {
+                    // CORS 에러 처리
+                    return originalFetch.apply(this, args)
+                        .catch(function(error) {
+                            console.error('[Streamlit] API 호출 실패:', url, error);
+                            // 네트워크 에러인 경우 사용자에게 알림
+                            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                                console.warn('[Streamlit] API 서버가 실행되지 않았거나 연결할 수 없습니다.');
+                                console.warn('[Streamlit] 해결 방법: 터미널에서 `python run_api.py` 실행');
+                            }
+                            throw error;
+                        });
+                }
+                
+                return originalFetch.apply(this, args);
+            };
+        })();
+    </script>
+'''
+    if '</head>' in html_content:
+        html_content = html_content.replace('</head>', api_error_handler + '</head>')
     
     return html_content
