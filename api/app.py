@@ -145,6 +145,22 @@ def index():
     return send_from_directory(PROJECT_ROOT, 'site-management.html')
 
 
+@app.route('/streamlit-assets/<path:subpath>')
+def serve_streamlit_assets(subpath):
+    """Streamlit에서 정적 파일 접근용 (CSS, JS 등)"""
+    if '..' in subpath:
+        return jsonify({'error': 'Forbidden'}), 403
+    
+    # CSS 파일
+    if subpath.endswith('.css'):
+        return send_from_directory(os.path.join(PROJECT_ROOT, 'css'), subpath.replace('css/', ''))
+    # JS 파일
+    elif subpath.endswith('.js'):
+        return send_from_directory(os.path.join(PROJECT_ROOT, 'js'), subpath.replace('js/', ''))
+    else:
+        return jsonify({'error': 'Not Found'}), 404
+
+
 @app.route('/css/<path:subpath>')
 def serve_css(subpath):
     """css 정적 파일"""

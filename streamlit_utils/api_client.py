@@ -8,7 +8,43 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_BASE = os.getenv('API_BASE_URL', 'http://localhost:5000').rstrip('/')
+def _detect_environment():
+    """배포 환경 감지"""
+    # Streamlit Cloud 감지 (여러 방법 시도)
+    if os.getenv('STREAMLIT_SERVER_HEADLESS') == 'true':
+        return 'streamlit_cloud'
+    if os.getenv('STREAMLIT_SERVER_PORT'):
+        return 'streamlit_cloud'
+    if os.getenv('HOSTNAME') and 'streamlit' in os.getenv('HOSTNAME', '').lower():
+        return 'streamlit_cloud'
+    # Streamlit 실행 환경 확인
+    try:
+        import streamlit as st
+        # Streamlit Cloud에서는 특정 옵션이 설정됨
+        if hasattr(st, 'config') and st.config.get_option('server.headless'):
+            return 'streamlit_cloud'
+    except:
+        pass
+    # 로컬 개발 환경
+    return 'local'
+
+def _get_api_base():
+    """환경에 맞는 API 기본 URL 반환"""
+    env = _detect_environment()
+    
+    # 환경 변수에서 명시적으로 설정된 경우 우선 사용
+    explicit_url = os.getenv('API_BASE_URL', '').strip()
+    if explicit_url:
+        return explicit_url.rstrip('/')
+    
+    # 배포 환경에서는 상대 경로 사용 (같은 서버의 /api)
+    if env == 'streamlit_cloud':
+        return ''  # 상대 경로 사용
+    
+    # 로컬 개발 환경
+    return 'http://localhost:5000'
+
+API_BASE = _get_api_base()
 TIMEOUT = 15
 HEADERS = {'Content-Type': 'application/json'}
 
@@ -16,6 +52,11 @@ HEADERS = {'Content-Type': 'application/json'}
 def _url(path):
     """경로 앞에 / 없으면 붙임. /api 로 시작하는 path 사용."""
     p = path if path.startswith('/') else '/' + path
+    
+    # API_BASE가 비어있으면 상대 경로 사용 (배포 환경)
+    if not API_BASE:
+        return p
+    
     return f"{API_BASE}{p}"
 
 
@@ -138,12 +179,28 @@ def create_certificate(payload):
 def check_api_connection():
     """
     GET /api/health 로 연결 확인.
+    배포 환경에서는 실패해도 UI는 표시되도록 처리.
     
     Returns:
         tuple: (is_connected: bool, error_message: str | None)
         - is_connected: 연결 성공 여부
         - error_message: 실패 시 구체적인 에러 메시지, 성공 시 None
     """
+    env = _detect_environment()
+    
+    # 배포 환경에서는 API 연결 체크를 건너뛰거나 더 관대하게 처리
+    if env == 'streamlit_cloud':
+        # 배포 환경에서는 API가 별도 서버에 있을 수 있으므로
+        # 연결 실패해도 UI는 표시
+        try:
+            r = requests.get(_url('/api/health'), timeout=3)
+            if r.status_code == 200:
+                return True, None
+        except:
+            # 배포 환경에서는 조용히 실패 처리
+            return False, "API 서버 연결 실패 (배포 환경에서는 별도 API 서버 필요)"
+    
+    # 로컬 개발 환경에서는 상세한 에러 메시지 제공
     try:
         r = requests.get(_url('/api/health'), timeout=5)
         if r.status_code == 200:
@@ -151,8 +208,10 @@ def check_api_connection():
         else:
             return False, f"API 서버 응답 오류: HTTP {r.status_code}"
     except requests.exceptions.Timeout:
-        return False, f"API 서버 연결 시간 초과 (5초). 서버가 실행 중인지 확인하세요. ({API_BASE}/api/health)"
+        api_url = _url('/api/health')
+        return False, f"API 서버 연결 시간 초과 (5초). 서버가 실행 중인지 확인하세요. ({api_url})"
     except requests.exceptions.ConnectionError:
-        return False, f"API 서버에 연결할 수 없습니다. Flask 서버가 실행 중인지 확인하세요. ({API_BASE}/api/health)"
+        api_url = _url('/api/health')
+        return False, f"API 서버에 연결할 수 없습니다. Flask 서버가 실행 중인지 확인하세요. ({api_url})"
     except Exception as e:
         return False, f"연결 확인 중 오류 발생: {str(e)}"
