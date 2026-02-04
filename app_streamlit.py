@@ -54,8 +54,18 @@ if not is_deployed:
     # 로컬 개발 환경에서만 상세한 API 연결 체크
     is_connected, error_msg = check_api_connection()
     if not is_connected:
-        st.warning(f'⚠️ API 연결 실패: {error_msg}')
-        st.info('💡 로컬 개발 시 Flask 서버를 실행하세요: `python run_api.py`')
+        st.error(f'❌ **API 연결 실패**: {error_msg}')
+        st.info('''
+        💡 **해결 방법:**
+        1. **Flask 서버 실행**: 터미널에서 `python run_api.py` 실행
+        2. **포트 확인**: 기본값은 5000번 포트입니다
+        3. **환경 변수 확인**: `.env` 파일에 `API_BASE_URL=http://localhost:5000/api` 설정 확인
+        4. **방화벽 확인**: 로컬호스트 연결이 차단되지 않았는지 확인
+        
+        ⚠️ **참고**: API 서버가 실행되지 않아도 UI는 표시되지만, 데이터를 불러올 수 없습니다.
+        ''')
+    else:
+        st.success('✅ API 서버 연결 성공')
 else:
     # 배포 환경에서는 API 연결 체크를 조용히 수행
     is_connected, error_msg = check_api_connection()

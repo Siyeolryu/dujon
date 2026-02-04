@@ -35,13 +35,16 @@ def _get_api_base():
     # 환경 변수에서 명시적으로 설정된 경우 우선 사용
     explicit_url = os.getenv('API_BASE_URL', '').strip()
     if explicit_url:
-        return explicit_url.rstrip('/')
+        # /api가 포함되어 있으면 그대로 사용, 없으면 추가
+        if not explicit_url.endswith('/api'):
+            explicit_url = explicit_url.rstrip('/') + '/api'
+        return explicit_url.rstrip('/api')  # /api 제거 (나중에 _url에서 추가)
     
     # 배포 환경에서는 상대 경로 사용 (같은 서버의 /api)
     if env == 'streamlit_cloud':
         return ''  # 상대 경로 사용
     
-    # 로컬 개발 환경
+    # 로컬 개발 환경 - 명확하게 localhost:5000 사용
     return 'http://localhost:5000'
 
 API_BASE = _get_api_base()
