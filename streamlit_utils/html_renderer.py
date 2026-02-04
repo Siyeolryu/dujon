@@ -50,13 +50,25 @@ def render_html_app(html_file='site-management.html', height=800, key=None):
     try:
         html_content = load_html_file(html_file)
         
-        # API 기본 URL 결정
+        # API 모드 결정 (환경 변수 또는 기본값)
         import os
+        api_mode = os.getenv('API_MODE', '').strip().lower() or 'flask'  # 'flask' 또는 'supabase'
+        
+        # API 기본 URL 결정
         api_base_url = os.getenv('API_BASE_URL', '').strip()
+        
+        # Supabase 설정 (API_MODE='supabase'일 때 사용)
+        supabase_url = os.getenv('SUPABASE_URL', '').strip()
+        supabase_anon_key = os.getenv('SUPABASE_ANON_KEY', '').strip()
         
         # Streamlit Cloud 환경 감지
         is_streamlit_cloud = _detect_streamlit_cloud()
-        if is_streamlit_cloud:
+        
+        # API_MODE가 'supabase'이고 Supabase 설정이 있으면 Supabase 직접 연결 사용
+        if api_mode == 'supabase' and supabase_url and supabase_anon_key:
+            # Supabase 직접 연결 모드
+            api_base_url = ''  # API_BASE_URL은 사용하지 않음
+        elif is_streamlit_cloud:
             # 배포 환경에서는 상대 경로 사용 (같은 서버의 /api)
             # 또는 환경 변수로 설정된 URL 사용
             if not api_base_url:
@@ -70,7 +82,13 @@ def render_html_app(html_file='site-management.html', height=800, key=None):
                 api_base_url = api_base_url.rstrip('/') + '/api'
         
         # CSS/JS 인라인화 및 Streamlit 준비
-        html_content = prepare_html_for_streamlit(html_content, api_base_url)
+        html_content = prepare_html_for_streamlit(
+            html_content, 
+            api_base_url=api_base_url,
+            api_mode=api_mode,
+            supabase_url=supabase_url,
+            supabase_anon_key=supabase_anon_key
+        )
         
         # Streamlit components로 렌더링
         return components.html(

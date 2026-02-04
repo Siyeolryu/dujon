@@ -49,7 +49,9 @@ except Exception as e:
     3. 배포 환경: Streamlit Secrets에 `API_BASE_URL` 설정
     ''')
 
-# API 연결 상태 확인 (HTML 렌더링 후, 배포 환경에서는 조용히 처리)
+# API 연결 상태 확인 (HTML 렌더링 후)
+api_mode = os.getenv('API_MODE', '').strip().lower() or 'flask'
+
 if not is_deployed:
     # 로컬 개발 환경에서만 상세한 API 연결 체크
     is_connected, error_msg = check_api_connection()
@@ -67,10 +69,20 @@ if not is_deployed:
     else:
         st.success('✅ API 서버 연결 성공')
 else:
-    # 배포 환경에서는 API 연결 체크를 조용히 수행
-    is_connected, error_msg = check_api_connection()
-    if not is_connected:
-        # 배포 환경에서는 API가 별도 서버에 있을 수 있으므로
-        # 정보만 표시 (경고 아님)
-        st.info('ℹ️ **참고**: API 서버 연결 확인 중... (배포 환경에서는 별도 API 서버가 필요할 수 있습니다)')
-        st.caption(f'API URL: {os.getenv("API_BASE_URL", "/api")}')
+    # 배포 환경 처리
+    if api_mode == 'supabase':
+        # Supabase 직접 연결 모드: API 연결 체크 불필요 (브라우저에서 직접 연결)
+        supabase_url = os.getenv('SUPABASE_URL', '').strip()
+        supabase_anon_key = os.getenv('SUPABASE_ANON_KEY', '').strip()
+        if supabase_url and supabase_anon_key:
+            st.success('✅ **Supabase 직접 연결 모드**: 브라우저에서 Supabase에 직접 연결합니다')
+        else:
+            st.warning('⚠️ **Supabase 설정 확인 필요**: `SUPABASE_URL`과 `SUPABASE_ANON_KEY`가 설정되어 있는지 확인하세요')
+    else:
+        # Flask API 모드: API 연결 체크 수행
+        is_connected, error_msg = check_api_connection()
+        if not is_connected:
+            st.info('ℹ️ **참고**: API 서버 연결 확인 중... (배포 환경에서는 별도 API 서버가 필요할 수 있습니다)')
+            st.caption(f'API URL: {os.getenv("API_BASE_URL", "/api")}')
+        else:
+            st.success('✅ API 서버 연결 성공')
