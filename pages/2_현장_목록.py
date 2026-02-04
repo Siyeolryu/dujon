@@ -15,9 +15,10 @@ from streamlit_utils.api_client import (
     unassign_site,
     check_api_connection,
 )
-from streamlit_utils.theme import apply_localhost_theme
+from streamlit_utils.theme import apply_localhost_theme, render_top_nav
 
 apply_localhost_theme()
+render_top_nav()
 
 # 필터 탭 스타일 추가
 st.markdown("""
@@ -72,8 +73,8 @@ st.markdown("""
     }
     [data-testid="stRadio"] > div > label:has(input[type="radio"]:checked),
     [data-testid="stRadio"] > div > label:has(input[checked]) {
-        background: #495057 !important;
-        border-color: #495057 !important;
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
         color: #fff !important;
     }
     [data-testid="stRadio"] input[type="radio"] {
@@ -105,6 +106,48 @@ st.markdown("""
     /* 필터 행 간격 조정 */
     .filter-row {
         margin-bottom: 12px;
+    }
+    /* 현장 목록 테이블 정렬 - 헤더/행 일치 */
+    .site-table-wrap {
+        overflow-x: auto;
+        margin-top: 12px;
+    }
+    .site-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .site-table th {
+        text-align: left;
+        padding: 12px 14px;
+        background: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        border-bottom: 1px solid #e9ecef;
+        white-space: nowrap;
+    }
+    .site-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #f1f3f5;
+        vertical-align: middle;
+    }
+    .site-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    .site-table .cell-actions {
+        white-space: nowrap;
+    }
+    .assign-panel-box {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -210,6 +253,9 @@ if search_input != st.session_state.search_query:
     st.session_state.current_page = 1  # 검색 시 첫 페이지로
 
 # 고급 필터 (접을 수 있는 섹션)
+selected_manager = ''
+date_start = None
+date_end = None
 with st.expander('📅 고급 필터 (날짜 범위, 담당소장)', expanded=False):
     adv_col1, adv_col2, adv_col3 = st.columns(3)
     
@@ -388,142 +434,47 @@ with pagination_col3:
             st.session_state.current_page += 1
             st.rerun()
 
-# ========== 테이블 헤더 및 정렬 ==========
-st.markdown('---')
-st.markdown('### 현장 목록')
-
-# 정렬 가능한 헤더
-sortable_columns = ['현장명', '회사구분', '배정상태', '현장상태', '담당소장명', '착공예정일', '등록일']
-header_cols = st.columns([2, 1, 1.2, 1.2, 1.5, 1.2, 1.2, 2.5])
-
-header_labels = {
-    '현장명': '현장명',
-    '회사구분': '회사구분',
-    '배정상태': '배정상태',
-    '현장상태': '현장상태',
-    '담당소장명': '담당소장명',
-    '착공예정일': '착공예정일',
-    '등록일': '등록일',
-    'actions': '액션',
-}
-
-for idx, (col, label_key) in enumerate(zip(header_cols[:-1], list(header_labels.keys())[:-1])):
-    with col:
-        if label_key in sortable_columns:
-            sort_icon = ''
-            if st.session_state.sort_column == label_key:
-                sort_icon = ' ↑' if st.session_state.sort_asc else ' ↓'
-            
-            if st.button(f'{header_labels[label_key]}{sort_icon}', key=f'sort_{label_key}', use_container_width=True):
-                if st.session_state.sort_column == label_key:
-                    st.session_state.sort_asc = not st.session_state.sort_asc
-                else:
-                    st.session_state.sort_column = label_key
-                    st.session_state.sort_asc = True
-                st.rerun()
-        else:
-            st.markdown(f'**{header_labels[label_key]}**')
-
-with header_cols[-1]:
-    st.markdown('**액션**')
-
-# ========== 테이블 본문 (서버 사이드 페이지네이션으로 이미 필터링됨) ==========
-# df는 이미 페이지네이션된 데이터이므로 그대로 사용
-# 테이블 행 렌더링
-for idx, row in df.iterrows():
-    row_cols = st.columns([2, 1, 1.2, 1.2, 1.5, 1.2, 1.2, 2.5])
-    
-    with row_cols[0]:
-        st.markdown(f"**{row['현장명']}**")
-        st.caption(f"ID: `{row['현장ID']}`")
-    
-    with row_cols[1]:
-        st.markdown(row['회사구분'] or '-')
-    
-    with row_cols[2]:
-        st.markdown(render_status_badge(row['배정상태'], 'assignment'), unsafe_allow_html=True)
-    
-    with row_cols[3]:
-        st.markdown(render_status_badge(row['현장상태'], 'site_state'), unsafe_allow_html=True)
-    
-    with row_cols[4]:
-        st.markdown(row['담당소장명'] or '-')
-    
-    with row_cols[5]:
-        st.markdown(row['착공예정일'] or '-')
-    
-    with row_cols[6]:
-        st.markdown(row['등록일'] or '-')
-    
-    with row_cols[7]:
-        action_col1, action_col2, action_col3 = st.columns(3)
-        site_id = row['현장ID']
-        
-        with action_col1:
-            if row['배정상태'] == '배정완료':
-                if st.button('해제', key=f'unassign_{site_id}', use_container_width=True):
-                    detail, _ = get_site(site_id)
-                    if detail:
-                        version = detail.get('version', '')
-                        result, err = unassign_site(site_id, version=version or None)
-                        if err:
-                            st.error(err)
-                        else:
-                            st.success('배정이 해제되었습니다.')
-                            st.rerun()
-            else:
-                if st.button('배정', key=f'assign_{site_id}', use_container_width=True):
-                    st.session_state.selected_site_id = site_id
-                    st.session_state.show_assign_modal = True
-                    st.rerun()
-        
-        with action_col2:
-            if st.button('상세', key=f'detail_{site_id}', use_container_width=True):
-                st.session_state.selected_site_id = site_id
-                st.rerun()
-        
-        with action_col3:
-            if st.button('복사', key=f'copy_{site_id}', use_container_width=True):
-                st.write(f'현장ID 복사됨: `{site_id}`')
-    
-    st.markdown('<hr style="margin: 8px 0; border-color: #e9ecef;">', unsafe_allow_html=True)
-
-# ========== 배정 모달 (사이드바 스타일) ==========
+# ========== 소장 배정 패널 (메인 영역, 사이드바 미사용) ==========
 if st.session_state.show_assign_modal and st.session_state.selected_site_id:
-    with st.sidebar:
-        st.subheader('소장 배정')
-        site_id = st.session_state.selected_site_id
+    st.markdown('<div class="assign-panel-box">', unsafe_allow_html=True)
+    st.subheader('📌 소장 배정')
+    site_id = st.session_state.selected_site_id
+    
+    detail, err = get_site(site_id)
+    if err and not detail:
+        st.error(err)
+    elif detail:
+        st.info(f"**{detail.get('현장명', '')}** · 현장ID: `{site_id}`")
+        version = detail.get('version', '')
         
-        detail, err = get_site(site_id)
-        if err and not detail:
-            st.error(err)
-        elif detail:
-            st.info(f"**{detail.get('현장명', '')}**\n\n현장ID: `{site_id}`")
-            version = detail.get('version', '')
+        personnel_list, _ = get_personnel(status='투입가능')
+        cert_list, _ = get_certificates(available=True)
+        
+        if not personnel_list:
+            st.warning('투입가능 인력이 없습니다.')
+        elif not cert_list:
+            st.warning('사용가능 자격증이 없습니다.')
+        else:
+            manager_options = {
+                f"{p.get('성명', '')} ({p.get('인력ID', '')})": p.get('인력ID')
+                for p in personnel_list
+            }
+            cert_options = {
+                f"{c.get('자격증명', '')} / {c.get('소유자명', '')} ({c.get('자격증ID', '')})": c.get('자격증ID')
+                for c in cert_list
+            }
             
-            personnel_list, _ = get_personnel(status='투입가능')
-            cert_list, _ = get_certificates(available=True)
-            
-            if not personnel_list:
-                st.warning('투입가능 인력이 없습니다.')
-            elif not cert_list:
-                st.warning('사용가능 자격증이 없습니다.')
-            else:
-                manager_options = {
-                    f"{p.get('성명', '')} ({p.get('인력ID', '')})": p.get('인력ID')
-                    for p in personnel_list
-                }
-                cert_options = {
-                    f"{c.get('자격증명', '')} / {c.get('소유자명', '')} ({c.get('자격증ID', '')})": c.get('자격증ID')
-                    for c in cert_list
-                }
-                
-                sel_manager = st.selectbox('담당 소장', list(manager_options.keys()))
-                sel_cert = st.selectbox('사용 자격증', list(cert_options.keys()))
-                
+            c1, c2, c3 = st.columns([2, 2, 1])
+            with c1:
+                sel_manager = st.selectbox('담당 소장', list(manager_options.keys()), key='assign_manager')
+            with c2:
+                sel_cert = st.selectbox('사용 자격증', list(cert_options.keys()), key='assign_cert')
+            with c3:
+                st.write('')
+                st.write('')
                 col_assign, col_cancel = st.columns(2)
                 with col_assign:
-                    if st.button('✅ 배정하기', use_container_width=True, type='primary'):
+                    if st.button('✅ 배정하기', use_container_width=True, type='primary', key='btn_assign_do'):
                         mid = manager_options.get(sel_manager)
                         cid = cert_options.get(sel_cert)
                         if mid and cid:
@@ -537,12 +488,98 @@ if st.session_state.show_assign_modal and st.session_state.selected_site_id:
                                 st.rerun()
                         else:
                             st.error('소장 또는 자격증을 선택하세요.')
-                
                 with col_cancel:
-                    if st.button('❌ 취소', use_container_width=True):
+                    if st.button('❌ 취소', use_container_width=True, key='btn_assign_cancel'):
                         st.session_state.show_assign_modal = False
                         st.session_state.selected_site_id = None
                         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ========== 현장 목록 테이블 (정렬된 데이터프레임 + 행별 액션) ==========
+st.markdown('### 현장 목록')
+
+# 표시용 데이터프레임 (액션 제외)
+df_display = df[['현장명', '회사구분', '배정상태', '현장상태', '담당소장명', '착공예정일', '등록일', '현장ID']].copy()
+df_display.columns = ['현장명', '회사구분', '배정상태', '현장상태', '담당소장명', '착공예정일', '등록일', '현장ID']
+
+# 현장 선택 + 액션 버튼 (한 줄 툴바)
+site_options = list(df_display['현장명'].astype(str) + ' (' + df_display['현장ID'].astype(str) + ')')
+site_id_map = dict(zip(site_options, df_display['현장ID']))
+tool_col1, tool_col2, tool_col3, tool_col4 = st.columns([3, 1, 1, 1])
+with tool_col1:
+    selected_label = st.selectbox(
+        '현장 선택 (액션 적용)',
+        options=[''] + site_options,
+        format_func=lambda x: x or '— 선택하세요 —',
+        key='site_select_toolbar'
+    )
+with tool_col2:
+    do_assign = st.button('배정', use_container_width=True, key='tool_assign')
+with tool_col3:
+    do_detail = st.button('상세', use_container_width=True, key='tool_detail')
+with tool_col4:
+    do_copy = st.button('복사', use_container_width=True, key='tool_copy')
+
+if selected_label and selected_label in site_id_map:
+    selected_site_id = site_id_map[selected_label]
+    if do_assign:
+        st.session_state.selected_site_id = selected_site_id
+        st.session_state.show_assign_modal = True
+        st.rerun()
+    if do_detail:
+        st.session_state.selected_site_id = selected_site_id
+        st.session_state.show_assign_modal = False
+        st.rerun()
+    if do_copy:
+        st.toast(f'현장ID 복사됨: {selected_site_id}')
+
+# 행별 배정/해제 버튼은 테이블 아래 "빠른 액션"으로
+st.dataframe(
+    df_display[['현장명', '회사구분', '배정상태', '현장상태', '담당소장명', '착공예정일', '등록일']],
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        '현장명': st.column_config.TextColumn('현장명', width='medium'),
+        '회사구분': st.column_config.TextColumn('회사구분', width='small'),
+        '배정상태': st.column_config.TextColumn('배정상태', width='small'),
+        '현장상태': st.column_config.TextColumn('현장상태', width='small'),
+        '담당소장명': st.column_config.TextColumn('담당소장명', width='small'),
+        '착공예정일': st.column_config.TextColumn('착공예정일', width='small'),
+        '등록일': st.column_config.TextColumn('등록일', width='small'),
+    }
+)
+
+# 빠른 액션: 행별 배정/해제/상세 (컴팩트 버튼 행)
+st.caption('빠른 액션: 아래에서 현장별로 배정·해제·상세를 실행할 수 있습니다.')
+for idx, row in df.iterrows():
+    site_id = row['현장ID']
+    ac1, ac2, ac3, ac4 = st.columns([2, 1, 1, 1])
+    with ac1:
+        st.caption(f"**{row['현장명']}** (ID: `{site_id}`)")
+    with ac2:
+        if row['배정상태'] == '배정완료':
+            if st.button('해제', key=f'unassign_{site_id}', use_container_width=True):
+                detail, _ = get_site(site_id)
+                version = detail.get('version', '') if detail else ''
+                _, err = unassign_site(site_id, version=version or None)
+                if err:
+                    st.error(err)
+                else:
+                    st.success('배정 해제됨')
+                    st.rerun()
+        else:
+            if st.button('배정', key=f'assign_{site_id}', use_container_width=True):
+                st.session_state.selected_site_id = site_id
+                st.session_state.show_assign_modal = True
+                st.rerun()
+    with ac3:
+        if st.button('상세', key=f'detail_{site_id}', use_container_width=True):
+            st.session_state.selected_site_id = site_id
+            st.session_state.show_assign_modal = False
+            st.rerun()
+    with ac4:
+        if st.button('복사', key=f'copy_{site_id}', use_container_width=True):
+            st.toast(f'현장ID 복사됨: {site_id}')
 
 # ========== 상세 정보 표시 ==========
 if st.session_state.selected_site_id and not st.session_state.show_assign_modal:

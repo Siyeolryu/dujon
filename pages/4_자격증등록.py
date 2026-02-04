@@ -5,9 +5,10 @@ POST /api/certificates (자격증ID·소유자ID는 API에서 자동 부여). UI
 import streamlit as st
 import os
 from streamlit_utils.api_client import create_certificate, check_api_connection
-from streamlit_utils.theme import apply_localhost_theme
+from streamlit_utils.theme import apply_localhost_theme, render_top_nav
 
 apply_localhost_theme()
+render_top_nav()
 
 # 페이지 제목 및 설명
 st.title('📜 자격증등록')
@@ -116,8 +117,8 @@ st.markdown("""
     }
     [data-testid="stRadio"] > div > label:has(input[type="radio"]:checked),
     [data-testid="stRadio"] > div > label:has(input[checked]) {
-        background: #495057 !important;
-        border-color: #495057 !important;
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
         color: #fff !important;
     }
     [data-testid="stRadio"] input[type="radio"] {
