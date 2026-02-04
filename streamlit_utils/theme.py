@@ -233,10 +233,93 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] .stButton > button {
     width: 100%;
 }
+/* 라디오 탭 스타일 - 선택 시 파란 계열(다른 탭과 동일) */
+[data-testid="stRadio"] > div > label:has(input[type="radio"]:checked),
+[data-testid="stRadio"] > div > label:has(input[checked]) {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #fff !important;
+}
+[data-testid="stRadio"] > div > label.tab-active {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #fff !important;
+}
+[data-testid="stRadio"] > div > label:hover {
+    background: #f8f9fa !important;
+    border-color: #adb5bd !important;
+}
+/* 사이드바 완전 숨김 (사용 안 함) */
+section[data-testid="stSidebar"],
+[data-testid="stSidebar"] {
+    display: none !important;
+}
+/* 메인 영역 전체 너비 사용 */
+[data-testid="stAppViewContainer"] main .block-container {
+    max-width: 100% !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+}
+/* 사이드바 토글 버튼 숨김 */
+button[kind="header"] {
+    display: none !important;
+}
+[data-testid="collapsedControl"] {
+    display: none !important;
+}
 </style>
 """
+
+# 상단 네비게이션 링크 (사이드바 대체)
+NAV_LINKS = [
+    ('🏠 대시보드', '대시보드'),
+    ('📋 현장 목록', '현장_목록'),
+    ('➕ 현장등록', '현장등록'),
+    ('📜 자격증등록', '자격증등록'),
+    ('👥 투입가능인원 상세', '투입가능인원_상세'),
+]
 
 
 def apply_localhost_theme():
     """로컬호스트 UI/UX 기준 스타일을 현재 페이지에 적용."""
     st.markdown(LOCALHOST_CSS, unsafe_allow_html=True)
+
+
+def render_top_nav():
+    """상단 네비게이션 바 렌더링 (사이드바 미사용 시 페이지 이동용)."""
+    st.markdown("""
+    <style>
+    .top-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 12px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .top-nav a {
+        color: #495057;
+        text-decoration: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s;
+    }
+    .top-nav a:hover {
+        background: #f8f9fa;
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+    </style>
+    <nav class="top-nav">
+        <a href="/">🏗️ 홈</a>
+        <a href="/대시보드">🏠 대시보드</a>
+        <a href="/현장_목록">📋 현장 목록</a>
+        <a href="/현장등록">➕ 현장등록</a>
+        <a href="/자격증등록">📜 자격증등록</a>
+        <a href="/투입가능인원_상세">👥 투입가능인원 상세</a>
+    </nav>
+    """, unsafe_allow_html=True)

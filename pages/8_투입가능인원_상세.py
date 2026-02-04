@@ -9,9 +9,10 @@ from streamlit_utils.api_client import (
     get_certificates,
     check_api_connection,
 )
-from streamlit_utils.theme import apply_localhost_theme
+from streamlit_utils.theme import apply_localhost_theme, render_top_nav
 
 apply_localhost_theme()
+render_top_nav()
 st.title('👥 투입가능 인원')
 
 is_connected, error_msg = check_api_connection()

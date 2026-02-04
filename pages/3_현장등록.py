@@ -4,9 +4,10 @@ POST /api/sites (현장ID는 API에서 자동 부여). UI/UX: 로컬호스트 �
 """
 import streamlit as st
 from streamlit_utils.api_client import create_site, check_api_connection
-from streamlit_utils.theme import apply_localhost_theme
+from streamlit_utils.theme import apply_localhost_theme, render_top_nav
 
 apply_localhost_theme()
+render_top_nav()
 
 # 페이지 제목 및 설명
 st.title('➕ 현장등록')
@@ -110,11 +111,11 @@ st.markdown("""
         background: #f8f9fa !important;
         border-color: #adb5bd !important;
     }
-    /* 활성 탭 스타일 - :has() 선택자 사용 (최신 브라우저) */
+    /* 활성 탭 스타일 - :has() 선택자 사용 (다른 탭과 동일한 파란 계열) */
     [data-testid="stRadio"] > div > label:has(input[type="radio"]:checked),
     [data-testid="stRadio"] > div > label:has(input[checked]) {
-        background: #495057 !important;
-        border-color: #495057 !important;
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
         color: #fff !important;
     }
     /* 활성 탭 스타일 - 호환성을 위한 대체 방법 */
@@ -124,8 +125,8 @@ st.markdown("""
     }
     /* JavaScript로 활성 상태 추가를 위한 클래스 */
     [data-testid="stRadio"] > div > label.tab-active {
-        background: #495057 !important;
-        border-color: #495057 !important;
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
         color: #fff !important;
     }
     [data-testid="stRadio"] input[type="radio"] {
