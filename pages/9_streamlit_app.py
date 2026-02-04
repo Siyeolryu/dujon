@@ -12,12 +12,7 @@ from streamlit_utils.theme import apply_localhost_theme, render_top_nav
 
 load_dotenv()
 
-st.set_page_config(
-    page_title='Streamlit App',
-    page_icon='🏗️',
-    layout='wide',
-    initial_sidebar_state='collapsed',
-)
+# 주의: set_page_config는 메인 스크립트(app_streamlit.py)에서만 호출. 페이지에서는 호출 시 네비게이션 오류 발생.
 apply_localhost_theme()
 render_top_nav()
 
