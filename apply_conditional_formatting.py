@@ -165,7 +165,8 @@ def apply_sheet1_formatting(sheet_id, sheet1_col_count=17):
     status_colors = [
         ('건축허가', {'red': 0.81, 'green': 0.89, 'blue': 0.95}),
         ('착공예정', {'red': 0.99, 'green': 0.9, 'blue': 0.8}),
-        ('착공중', {'red': 1.0, 'green': 0.95, 'blue': 0.8}),
+        ('공사 중', {'red': 1.0, 'green': 0.95, 'blue': 0.8}),
+        ('공사 중단', {'red': 0.9, 'green': 0.9, 'blue': 0.9}),
         ('준공', {'red': 0.85, 'green': 0.92, 'blue': 0.83}),
     ]
     for idx, (status, color) in enumerate(status_colors):

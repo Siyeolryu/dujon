@@ -24,7 +24,7 @@ def validate_site_data(data, is_update=False):
             errors.append('회사구분은 "더존종합건설" 또는 "더존하우징"이어야 합니다')
 
     if '현장상태' in data and data['현장상태']:
-        valid = ('건축허가', '착공예정', '착공중', '준공')
+        valid = ('건축허가', '착공예정', '공사 중', '공사 중단', '준공')
         if data['현장상태'] not in valid:
             errors.append(f'현장상태는 {", ".join(valid)} 중 하나여야 합니다')
 

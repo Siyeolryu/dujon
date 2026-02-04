@@ -34,6 +34,8 @@ const Filter = {
 
     async apply() {
         this.currentFilters = this.getFilterValues();
+        // 필터 변경 시 Dashboard 탭 상태 동기화
+        this.syncDashboardTab();
         const apiCompany = DISPLAY_MAP.companyReverse[this.currentFilters.company] ?? '';
         const params = {};
         if (apiCompany) params.company = apiCompany;
@@ -50,6 +52,23 @@ const Filter = {
             App.renderSiteList(null, true);
             const countEl = document.getElementById('siteCount');
             if (countEl) countEl.textContent = '-';
+        }
+    },
+
+    syncDashboardTab() {
+        // 필터 상태에 따라 Dashboard 탭 활성화
+        if (typeof Dashboard === 'undefined') return;
+        const status = this.currentFilters.status;
+        // 배정상태 필터가 설정되어 있고, 다른 필터가 없으면 해당 탭 활성화
+        if (status === '미배정' && this.currentFilters.company === 'all' && this.currentFilters.state === 'all') {
+            Dashboard.setActiveTab('statUnassigned');
+        } else if (status === '배정완료' && this.currentFilters.company === 'all' && this.currentFilters.state === 'all') {
+            Dashboard.setActiveTab('statAssigned');
+        } else if (status === 'all' && this.currentFilters.company === 'all' && this.currentFilters.state === 'all') {
+            Dashboard.setActiveTab('statTotalSites');
+        } else {
+            // 복합 필터가 적용되면 탭 비활성화
+            Dashboard.clearActiveTab();
         }
     },
 
@@ -80,6 +99,10 @@ const Filter = {
         if (stateEl) stateEl.value = 'all';
         if (searchInput) searchInput.value = '';
         this.currentFilters = { company: 'all', status: 'all', state: 'all' };
+        // Dashboard 탭 활성 상태 초기화
+        if (typeof Dashboard !== 'undefined' && Dashboard.clearActiveTab) {
+            Dashboard.clearActiveTab();
+        }
         this.apply();
     },
 };

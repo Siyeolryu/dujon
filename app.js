@@ -224,7 +224,7 @@ function showDetailPanel(site) {
     statusElement.className = 'value status-tag';
     if (site.siteStatus === '건축허가') {
         statusElement.classList.add('permit');
-    } else if (site.siteStatus === '착공예정' || site.siteStatus === '착공중') {
+    } else if (site.siteStatus === '착공예정' || site.siteStatus === '공사 중') {
         statusElement.classList.add('construction');
     } else if (site.siteStatus === '준공') {
         statusElement.classList.add('completed');

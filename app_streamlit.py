@@ -25,10 +25,18 @@ st.title('🏗️ 현장배정 관리 시스템')
 st.caption('Streamlit 웹 UI · 좌측 사이드바에서 페이지를 선택하세요.')
 
 # API 연결 상태
-if check_api_connection():
-    st.success(f'API 연결됨: {API_BASE_URL}')
+is_connected, error_msg = check_api_connection()
+if is_connected:
+    st.success(f'✅ API 연결됨: {API_BASE_URL}')
 else:
-    st.warning(f'API에 연결할 수 없습니다. Flask 서버가 실행 중인지 확인하세요. ({API_BASE_URL})')
+    st.error(f'❌ API 연결 실패: {error_msg}')
+    with st.expander('💡 해결 방법'):
+        st.markdown('''
+        1. **Flask 서버 실행**: 터미널에서 `python run_api.py` 실행
+        2. **포트 확인**: 기본값은 5000번 포트입니다
+        3. **환경 변수 확인**: `.env` 파일에 `API_BASE_URL`이 올바르게 설정되어 있는지 확인
+        4. **방화벽 확인**: 로컬호스트 연결이 차단되지 않았는지 확인
+        ''')
 
 st.markdown('---')
 st.markdown('''

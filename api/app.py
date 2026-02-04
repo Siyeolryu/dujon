@@ -26,6 +26,32 @@ def assign_request_id():
 
 
 @app.after_request
+def set_security_headers(response):
+    """보안 헤더 설정 (XSS, Clickjacking 방지 등)"""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # HTTPS 환경에서만 HSTS 설정
+    if request.is_secure:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # Content-Security-Policy 설정
+    csp = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://dapi.kakao.com https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self' https://*.supabase.co http://127.0.0.1:7242; "  # 개발용 디버깅 서버
+        "frame-ancestors 'none';"
+    )
+    response.headers['Content-Security-Policy'] = csp
+    
+    return response
+
+
+@app.after_request
 def log_connection_errors(response):
     """4xx/5xx 응답 시 백엔드-프론트 연결 문제 확인용 로그 기록"""
     if response.status_code >= 400:
@@ -62,12 +88,20 @@ def log_connection_errors(response):
     return response
 
 
+# CORS 설정: 로컬 개발 + 프로덕션 도메인 지원
+ALLOWED_ORIGINS = os.getenv(
+    'ALLOWED_ORIGINS',
+    'http://localhost:5000,http://127.0.0.1:5000,http://localhost:8000,http://127.0.0.1:8000,http://localhost:8501,http://127.0.0.1:8501'
+).split(',')
+
+# 프로덕션 도메인 추가 (환경 변수로 설정, 쉼표 구분)
+PRODUCTION_ORIGINS = os.getenv('PRODUCTION_ORIGINS', '').split(',')
+if PRODUCTION_ORIGINS and PRODUCTION_ORIGINS[0]:
+    ALLOWED_ORIGINS.extend([origin.strip() for origin in PRODUCTION_ORIGINS if origin.strip()])
+
 CORS(app, resources={
     r"/api/*": {
-        "origins": os.getenv(
-            'ALLOWED_ORIGINS',
-            'http://localhost:5000,http://127.0.0.1:5000,http://localhost:8000,http://127.0.0.1:8000'
-        ).split(','),
+        "origins": ALLOWED_ORIGINS,
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization", "X-API-Key", "If-Match"],
     }

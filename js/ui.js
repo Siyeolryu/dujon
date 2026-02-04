@@ -71,6 +71,9 @@ const UI = {
         const confirmBtn = document.getElementById('modalConfirm');
         if (!overlay || !titleEl || !bodyEl) return;
         titleEl.textContent = title;
+        // XSS 방지: contentHTML이 신뢰할 수 있는 소스에서 온 경우에만 innerHTML 사용
+        // 외부 입력이 포함된 경우 textContent 사용 또는 DOMPurify로 정제 필요
+        // 현재는 내부에서만 사용하므로 innerHTML 유지하되, 향후 외부 입력 시 정제 필요
         bodyEl.innerHTML = contentHTML;
         overlay.classList.remove('hidden');
         if (cancelBtn) cancelBtn.style.display = 'inline-block';

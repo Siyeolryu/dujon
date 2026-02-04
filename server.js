@@ -3,10 +3,12 @@
  * Python이 없을 때 프론트엔드 + API 목(mock) 서빙
  * 포트 5000, http://localhost:5000/
  */
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 5000;
 const ROOT = __dirname;
 

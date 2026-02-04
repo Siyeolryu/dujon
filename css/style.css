@@ -211,8 +211,58 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
+.stat-sub-label {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 4px;
+    font-weight: 400;
+}
+.stat-sub-label.skeleton-sub {
+    color: #dee2e6;
+}
 .stat-card:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+/* 통계 카드 탭 기능 (클릭 가능) */
+.stat-card.stat-tab {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+.stat-card.stat-tab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+.stat-card.stat-tab:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.stat-card.stat-tab:focus {
+    outline: 2px solid #495057;
+    outline-offset: 2px;
+}
+/* 활성 탭 상태 */
+.stat-card.stat-tab.active {
+    box-shadow: 0 4px 16px rgba(73, 80, 87, 0.2);
+    transform: translateY(-2px);
+    border: 2px solid #495057;
+    border-left-width: 6px;
+}
+.stat-card.stat-tab.active::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: #495057;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
 }
 /* 상태 인디케이터 - 파스텔/세련된 톤 */
 .stat-card.stat-danger {

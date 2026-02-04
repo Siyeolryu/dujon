@@ -7,21 +7,35 @@ const API = {
     _logConnectionProblem(payload) {
         const { url, method, status, errorCode, message, request_id } = payload;
         const line = '[FE↔BE] url=' + url + ' method=' + method + ' status=' + status + ' code=' + (errorCode || '') + ' msg=' + (message || '') + ' request_id=' + (request_id || '');
-        if (typeof console !== 'undefined' && console.warn) console.warn(line);
-        try {
-            fetch('http://127.0.0.1:7242/ingest/2aca0e8f-d16b-480b-8f72-96be3c2a5d6c', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    location: 'api.js:request',
-                    message: 'API connection problem',
-                    data: { url, method, status, errorCode, message, request_id },
-                    timestamp: Date.now(),
-                    sessionId: 'fe-be-connection',
-                    hypothesisId: 'connection-fail',
-                }),
-            }).catch(function() {});
-        } catch (e) {}
+        
+        // 개발 환경에서만 콘솔 로그 출력
+        const isDevelopment = typeof window !== 'undefined' && 
+            (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        
+        if (isDevelopment && typeof console !== 'undefined' && console.warn) {
+            console.warn(line);
+        }
+        
+        // 보안: 프로덕션 환경에서는 외부 서버로 로그 전송하지 않음
+        // 개발 환경에서만 디버깅 로그 전송 (선택적)
+        if (isDevelopment) {
+            try {
+                fetch('http://127.0.0.1:7242/ingest/2aca0e8f-d16b-480b-8f72-96be3c2a5d6c', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        location: 'api.js:request',
+                        message: 'API connection problem',
+                        data: { url, method, status, errorCode, message, request_id },
+                        timestamp: Date.now(),
+                        sessionId: 'fe-be-connection',
+                        hypothesisId: 'connection-fail',
+                    }),
+                }).catch(function() {});
+            } catch (e) {
+                // 무시 (디버깅 서버가 없어도 앱 동작에 영향 없음)
+            }
+        }
     },
     // #endregion
 
@@ -170,6 +184,13 @@ const API = {
         return await this.request('/certificates', {
             method: 'POST',
             body: JSON.stringify(certData),
+        });
+    },
+
+    async updateCertificate(certId, updateData) {
+        return await this.request(`/certificates/${encodeURIComponent(certId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(updateData),
         });
     },
 

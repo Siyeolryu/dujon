@@ -586,7 +586,7 @@ def validate_site_data(data, is_update=False):
     
     # 현장상태 검증
     if '현장상태' in data:
-        valid_states = ['건축허가', '착공예정', '착공중', '준공']
+        valid_states = ['건축허가', '착공예정', '공사 중', '준공']
         if data['현장상태'] not in valid_states:
             errors.append(f'현장상태는 {", ".join(valid_states)} 중 하나여야 합니다')
     
