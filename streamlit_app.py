@@ -1,30 +1,43 @@
 """
-현장배정 관리 시스템 - Streamlit 메인 진입점 (GitHub/Streamlit Cloud Main file path)
-기존 Flask API(API_BASE_URL)를 호출합니다. UI/UX: 로컬호스트 기준 적용.
-Main file path: app_streamlit.py 또는 streamlit_app.py
+현장배정 관리 시스템 - Streamlit 메인 진입점
+GitHub/Streamlit Cloud에서 Main file path: streamlit_app.py
+pages/ 폴더의 한글 페이지 파일들을 자동으로 사이드바에 표시합니다.
 """
 import os
 import streamlit as st
 from dotenv import load_dotenv
-from streamlit_utils.api_client import check_api_connection
-from streamlit_utils.theme import apply_localhost_theme
 
 load_dotenv()
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:5000')
 
+# 페이지 설정 (반드시 첫 번째 Streamlit 명령어여야 함)
 st.set_page_config(
     page_title='현장배정 관리 시스템',
     page_icon='🏗️',
     layout='wide',
     initial_sidebar_state='expanded',
 )
-apply_localhost_theme()
 
+# 테마 적용 (streamlit_utils가 있는 경우)
+try:
+    from streamlit_utils.theme import apply_localhost_theme
+    apply_localhost_theme()
+except ImportError:
+    pass
+
+# API 연결 확인 (streamlit_utils가 있는 경우)
+try:
+    from streamlit_utils.api_client import check_api_connection
+    is_connected, error_msg = check_api_connection()
+except ImportError:
+    is_connected = False
+    error_msg = "streamlit_utils 모듈을 찾을 수 없습니다"
+
+# 메인 페이지 내용
 st.title('🏗️ 현장배정 관리 시스템')
-st.caption('Streamlit 웹 UI · 좌측 사이드바에서 페이지를 선택하세요.')
+st.caption('좌측 사이드바에서 페이지를 선택하세요.')
 
-# API 연결 상태
-is_connected, error_msg = check_api_connection()
+# API 연결 상태 표시
 if is_connected:
     st.success(f'✅ API 연결됨: {API_BASE_URL}')
 else:
@@ -38,17 +51,23 @@ else:
         ''')
 
 st.markdown('---')
+
+# 페이지 안내
 st.markdown('''
-**사용 방법**
-- **대시보드**: 통계 요약(전체 현장, 미배정, 배정완료, 투입가능 인력, 사용가능 자격증)
-- **현장 목록**: 필터·검색·테이블, 배정/해제
-- **현장등록**: 새 현장 등록 (현장ID 자동 부여)
-- **자격증등록**: 새 자격증 등록 (자격증ID·소유자ID 자동 부여)
+### 📋 사용 가능한 페이지
+
+| 페이지 | 설명 |
+|--------|------|
+| **📊 대시보드** | 통계 요약 (전체 현장, 미배정, 배정완료, 투입가능 인력) |
+| **📋 현장 목록** | 필터·검색·테이블, 배정/해제 |
+| **➕ 현장등록** | 새 현장 등록 (현장ID 자동 부여) |
+| **📜 자격증등록** | 새 자격증 등록 (자격증ID·소유자ID 자동 부여) |
+| **👥 투입가능인원 상세** | 투입 가능한 인원 상세 정보 |
+
+👈 **좌측 사이드바**에서 페이지를 선택하세요.
 ''')
 
-# 기존 HTML 웹 UI 링크
+# 기존 HTML 웹 UI 링크 (로컬 개발 시)
 st.markdown('---')
-st.markdown('### 기존 웹 UI')
-st.markdown(f'HTML/JS 기반 화면(지도 포함)은 [여기]({API_BASE_URL}/)에서 열 수 있습니다.')
-if st.button('기존 웹 UI 열기 (새 탭)'):
-    st.markdown(f'[링크]({API_BASE_URL}/)', unsafe_allow_html=True)
+st.markdown('### 🔗 기타')
+st.markdown(f'HTML/JS 기반 화면(지도 포함)은 Flask 서버에서 확인: `{API_BASE_URL}/`')
