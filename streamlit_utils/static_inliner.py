@@ -86,13 +86,16 @@ def inline_css_and_js(html_content):
     return html_content
 
 
-def prepare_html_for_streamlit(html_content, api_base_url='/api'):
+def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flask', supabase_url='', supabase_anon_key=''):
     """
     HTML을 Streamlit에서 사용할 수 있도록 준비
     
     Args:
         html_content: 원본 HTML 내용
         api_base_url: API 기본 URL (예: 'http://localhost:5000/api' 또는 '/api')
+        api_mode: API 모드 ('flask' 또는 'supabase')
+        supabase_url: Supabase URL (api_mode='supabase'일 때 필수)
+        supabase_anon_key: Supabase Anon Key (api_mode='supabase'일 때 필수)
         
     Returns:
         Streamlit용 HTML 내용
@@ -104,12 +107,62 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api'):
         import streamlit as st
         st.warning(f"CSS/JS 인라인화 중 일부 오류 발생: {str(e)} (계속 진행합니다)")
     
-    # API URL 정규화 (로컬호스트인 경우 명확하게 설정)
-    is_localhost = api_base_url.startswith('http://localhost') or api_base_url.startswith('http://127.0.0.1')
-    
-    # API 설정 주입 (기존 설정이 있으면 교체)
-    # Streamlit iframe 내부에서도 올바른 API URL 사용하도록 설정
-    api_config_script = f'''
+    # API 모드에 따라 설정 스크립트 생성
+    if api_mode == 'supabase' and supabase_url and supabase_anon_key:
+        # Supabase 직접 연결 모드
+        api_config_script = f'''
+    <script>
+        // Streamlit 환경에서 Supabase 직접 연결 설정 (가장 먼저 실행)
+        (function() {{
+            // Supabase 설정 주입
+            window.__SUPABASE_URL__ = '{supabase_url}';
+            window.__SUPABASE_ANON_KEY__ = '{supabase_anon_key}';
+            
+            // CONFIG 객체 미리 생성 (config.js가 로드되기 전)
+            if (!window.CONFIG) {{
+                window.CONFIG = {{}};
+            }}
+            window.CONFIG.API_MODE = 'supabase';
+            window.CONFIG.SUPABASE_URL = '{supabase_url}';
+            window.CONFIG.SUPABASE_ANON_KEY = '{supabase_anon_key}';
+            
+            console.log('[Streamlit] Supabase 직접 연결 모드 설정 완료:', {{
+                API_MODE: window.CONFIG.API_MODE,
+                SUPABASE_URL: window.CONFIG.SUPABASE_URL
+            }});
+            
+            // config.js 로드 후 CONFIG 객체 강제 업데이트
+            setTimeout(function() {{
+                if (window.CONFIG) {{
+                    Object.assign(window.CONFIG, {{
+                        API_MODE: 'supabase',
+                        SUPABASE_URL: '{supabase_url}',
+                        SUPABASE_ANON_KEY: '{supabase_anon_key}'
+                    }});
+                    console.log('[Streamlit] CONFIG 강제 업데이트 완료 (Supabase 모드):', window.CONFIG);
+                }}
+            }}, 100);
+            
+            // DOMContentLoaded 시에도 다시 확인
+            if (document.readyState === 'loading') {{
+                document.addEventListener('DOMContentLoaded', function() {{
+                    if (window.CONFIG) {{
+                        window.CONFIG.API_MODE = 'supabase';
+                        window.CONFIG.SUPABASE_URL = '{supabase_url}';
+                        window.CONFIG.SUPABASE_ANON_KEY = '{supabase_anon_key}';
+                        console.log('[Streamlit] DOMContentLoaded 후 CONFIG 재설정 (Supabase 모드):', window.CONFIG);
+                    }}
+                }});
+            }}
+        }})();
+    </script>
+'''
+    else:
+        # Flask API 모드 (기본값)
+        # API URL 정규화 (로컬호스트인 경우 명확하게 설정)
+        is_localhost = api_base_url.startswith('http://localhost') or api_base_url.startswith('http://127.0.0.1')
+        
+        api_config_script = f'''
     <script>
         // Streamlit 환경에서 API URL 설정 (가장 먼저 실행)
         (function() {{
@@ -160,28 +213,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api'):
             console.log('[Streamlit] CONFIG 설정 완료:', {{
                 API_MODE: window.CONFIG.API_MODE,
                 API_BASE_URL: window.CONFIG.API_BASE_URL
-            }});
-            
-            // config.js가 로드된 후에도 이 값이 우선되도록 감시
-            const originalConfig = window.CONFIG;
-            let configProxy = new Proxy(originalConfig, {{
-                get: function(target, prop) {{
-                    if (prop === 'API_MODE') return 'flask';
-                    if (prop === 'API_BASE_URL') return apiUrl;
-                    return target[prop];
-                }},
-                set: function(target, prop, value) {{
-                    if (prop === 'API_MODE' && value !== 'flask') {{
-                        console.warn('[Streamlit] API_MODE는 flask로 고정됩니다.');
-                        return true;
-                    }}
-                    if (prop === 'API_BASE_URL') {{
-                        console.warn('[Streamlit] API_BASE_URL은 고정됩니다:', apiUrl);
-                        return true;
-                    }}
-                    target[prop] = value;
-                    return true;
-                }}
             }});
             
             // config.js 로드 후 CONFIG 객체 강제 업데이트

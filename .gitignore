@@ -17,6 +17,7 @@ build/
 
 # 환경/비밀
 .env
+streamlit_secrets.toml
 *.pickle
 token.pickle
 client_secret*.json

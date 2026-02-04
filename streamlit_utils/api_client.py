@@ -183,6 +183,7 @@ def check_api_connection():
     """
     GET /api/health 로 연결 확인.
     배포 환경에서는 실패해도 UI는 표시되도록 처리.
+    Supabase 직접 연결 모드일 때는 체크를 건너뜀.
     
     Returns:
         tuple: (is_connected: bool, error_message: str | None)
@@ -190,6 +191,19 @@ def check_api_connection():
         - error_message: 실패 시 구체적인 에러 메시지, 성공 시 None
     """
     env = _detect_environment()
+    
+    # API 모드 확인
+    api_mode = os.getenv('API_MODE', '').strip().lower() or 'flask'
+    
+    # Supabase 직접 연결 모드일 때는 API 연결 체크 불필요
+    if api_mode == 'supabase':
+        supabase_url = os.getenv('SUPABASE_URL', '').strip()
+        supabase_anon_key = os.getenv('SUPABASE_ANON_KEY', '').strip()
+        if supabase_url and supabase_anon_key:
+            # Supabase 설정이 있으면 성공으로 처리 (브라우저에서 직접 연결)
+            return True, None
+        else:
+            return False, "Supabase 설정이 없습니다. SUPABASE_URL과 SUPABASE_ANON_KEY를 확인하세요."
     
     # 배포 환경에서는 API 연결 체크를 건너뛰거나 더 관대하게 처리
     if env == 'streamlit_cloud':
