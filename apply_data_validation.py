@@ -245,7 +245,7 @@ def main():
         # 현장상태 드롭다운
         validations.append(apply_dropdown_validation(
             service, sheet1_id, '시트1', 'J',
-            ['건축허가', '착공예정', '착공중', '준공']
+            ['건축허가', '착공예정', '공사 중', '공사 중단', '준공']
         ))
 
         # 배정상태 드롭다운 (17컬럼=O, 22컬럼=T)

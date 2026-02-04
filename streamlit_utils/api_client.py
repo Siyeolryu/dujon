@@ -44,8 +44,8 @@ def get_stats():
 
 
 # --- Sites ---
-def get_sites(company=None, status=None, state=None):
-    """GET /api/sites?company=&status=&state="""
+def get_sites(company=None, status=None, state=None, limit=None, offset=None):
+    """GET /api/sites?company=&status=&state=&limit=&offset="""
     params = {}
     if company:
         params['company'] = company
@@ -53,6 +53,10 @@ def get_sites(company=None, status=None, state=None):
         params['status'] = status
     if state:
         params['state'] = state
+    if limit:
+        params['limit'] = limit
+    if offset is not None:
+        params['offset'] = offset
     r = requests.get(_url('/api/sites'), params=params, timeout=TIMEOUT, headers=HEADERS)
     return _check(r)
 
@@ -132,9 +136,23 @@ def create_certificate(payload):
 
 
 def check_api_connection():
-    """GET /api/health 로 연결 확인."""
+    """
+    GET /api/health 로 연결 확인.
+    
+    Returns:
+        tuple: (is_connected: bool, error_message: str | None)
+        - is_connected: 연결 성공 여부
+        - error_message: 실패 시 구체적인 에러 메시지, 성공 시 None
+    """
     try:
         r = requests.get(_url('/api/health'), timeout=5)
-        return r.status_code == 200
-    except Exception:
-        return False
+        if r.status_code == 200:
+            return True, None
+        else:
+            return False, f"API 서버 응답 오류: HTTP {r.status_code}"
+    except requests.exceptions.Timeout:
+        return False, f"API 서버 연결 시간 초과 (5초). 서버가 실행 중인지 확인하세요. ({API_BASE}/api/health)"
+    except requests.exceptions.ConnectionError:
+        return False, f"API 서버에 연결할 수 없습니다. Flask 서버가 실행 중인지 확인하세요. ({API_BASE}/api/health)"
+    except Exception as e:
+        return False, f"연결 확인 중 오류 발생: {str(e)}"

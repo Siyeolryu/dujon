@@ -2,6 +2,15 @@
  * 소장 배정 패널 - API assign/unassign 연동
  * API는 manager_id, certificate_id 둘 다 필수
  */
+
+// XSS 방지: HTML 이스케이프 함수 (app.js의 escapeHtml 사용)
+function escapeHtml(s) {
+    if (s == null) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
 const Assign = {
     targetSiteId: null,
     selectedManagerId: null,
@@ -65,10 +74,10 @@ const Assign = {
         DataAPI.getPersonnelDetail(managerId).then((p) => {
             if (!p || p['인력ID'] !== managerId) return;
             preview.innerHTML = `
-                <p><strong>${p['성명'] || '-'}</strong></p>
-                <p>직책: ${p['직책'] || '-'} | 소속: ${DISPLAY_MAP.company[p['소속']] || p['소속'] || '-'}</p>
-                <p>연락처: ${p['연락처'] || '-'}</p>
-                <p>현재담당현장수: ${p['현재담당현장수'] ?? 0}</p>
+                <p><strong>${escapeHtml(p['성명'] || '-')}</strong></p>
+                <p>직책: ${escapeHtml(p['직책'] || '-')} | 소속: ${escapeHtml(DISPLAY_MAP.company[p['소속']] || p['소속'] || '-')}</p>
+                <p>연락처: ${escapeHtml(p['연락처'] || '-')}</p>
+                <p>현재담당현장수: ${escapeHtml(String(p['현재담당현장수'] ?? 0))}</p>
             `;
             preview.classList.remove('hidden');
         });
@@ -87,10 +96,10 @@ const Assign = {
         DataAPI.getCertificateDetail(certId).then((c) => {
             if (!c || c['자격증ID'] !== certId) return;
             preview.innerHTML = `
-                <p><strong>${c['자격증명'] || '-'}</strong></p>
-                <p>자격증번호: ${c['자격증번호'] || '-'}</p>
-                <p>소유자: ${c['소유자명'] || '-'} (${c['소유자연락처'] || '-'})</p>
-                <p>유효기간: ${c['유효기간'] || '-'}</p>
+                <p><strong>${escapeHtml(c['자격증명'] || '-')}</strong></p>
+                <p>자격증번호: ${escapeHtml(c['자격증번호'] || '-')}</p>
+                <p>소유자: ${escapeHtml(c['소유자명'] || '-')} (${escapeHtml(c['소유자연락처'] || '-')})</p>
+                <p>유효기간: ${escapeHtml(c['유효기간'] || '-')}</p>
             `;
             preview.classList.remove('hidden');
         });

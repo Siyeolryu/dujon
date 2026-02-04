@@ -31,7 +31,26 @@ class _SheetsAdapter:
         self._personnel = SHEET_PERSONNEL
         self._certs = SHEET_CERTIFICATES
 
-    def get_all_sites(self): return self._s.get_all_sites()
+    def get_all_sites(self, limit=None, offset=0): 
+        return self._s.get_all_sites(limit=limit, offset=offset) if hasattr(self._s, 'get_all_sites') else self._s.get_all_sites()
+    
+    def get_sites_paginated(self, company=None, status=None, state=None, limit=None, offset=0):
+        """페이지네이션 지원 현장 조회"""
+        if hasattr(self._s, 'get_sites_paginated'):
+            return self._s.get_sites_paginated(company=company, status=status, state=state, limit=limit, offset=offset)
+        # 폴백: 기존 방식
+        sites = self.get_all_sites()
+        if company:
+            sites = [s for s in sites if s.get('회사구분') == company]
+        if status:
+            sites = [s for s in sites if s.get('배정상태') == status]
+        if state:
+            sites = [s for s in sites if s.get('현장상태') == state]
+        total = len(sites)
+        if limit:
+            sites = sites[offset:offset + limit]
+        return {'data': sites, 'total': total}
+    
     def get_site_by_id(self, site_id): return self._s.get_site_by_id(site_id)
     def get_all_personnel(self): return self._s.get_all_personnel()
     def get_personnel_by_id(self, pid): return self._s.get_personnel_by_id(pid)

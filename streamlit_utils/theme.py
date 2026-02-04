@@ -4,7 +4,7 @@ Modern Minimal Premium: 배경 #F8F9FA, 카드 Soft Shadow, 상태색 파스텔.
 """
 import streamlit as st
 
-# 로컬호스트 style.css / components.css 와 동일한 톤으로 블록·버튼·테이블·폼 오버라이드
+# 로컬호스트 style.css / components.css 와 동일한 톤·정렬(패딩 24px, 전체 너비) 적용
 LOCALHOST_CSS = """
 <style>
 /* 전역: 로컬호스트 폰트/배경 톤 유지 */
@@ -16,7 +16,21 @@ LOCALHOST_CSS = """
     background: #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
-/* 메인 영역 블록 = 카드 스타일 (Soft Shadow) */
+/* 메인 콘텐츠 영역 = 로컬호스트 .main-content / .dashboard-section (padding 20px 24px, 전체 너비) */
+.main .block-container,
+.reportview-container .main .block-container {
+    max-width: 100% !important;
+    padding: 20px 24px 32px 24px !important;
+}
+/* Streamlit 1.40+ 대비: main 직하위 컨테이너 */
+[data-testid="stAppViewContainer"] main > div {
+    max-width: 100% !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    padding-top: 20px !important;
+    padding-bottom: 32px !important;
+}
+/* 메인 영역 블록 = 카드 스타일 (Soft Shadow), 로컬 .stat-card / .register-section 톤 */
 [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
 section[data-testid="stSidebar"] > div {
     background: #fff;
@@ -24,6 +38,16 @@ section[data-testid="stSidebar"] > div {
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     padding: 20px 16px;
     margin-bottom: 16px;
+}
+/* 대시보드 메트릭 행 = 로컬 .stats-grid (gap 16px) */
+[data-testid="stHorizontalBlock"] > [data-testid="stVerticalBlock"] {
+    gap: 16px;
+}
+[data-testid="column"] {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 /* 사이드바 */
 section[data-testid="stSidebar"] {
@@ -33,11 +57,18 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] .stMarkdown {
     color: #495057;
 }
-/* 제목 = 로컬 register-title / list-header h3 */
-h1, h2, h3 {
+/* 제목 = 로컬 .app-header h1 / .register-title / .list-header h3 (여백 동기화) */
+[data-testid="stAppViewContainer"] h1,
+[data-testid="stAppViewContainer"] h2,
+[data-testid="stAppViewContainer"] h3 {
     color: #1a1d21 !important;
     font-weight: 600 !important;
     letter-spacing: -0.02em;
+}
+[data-testid="stAppViewContainer"] h1 {
+    font-size: 20px;
+    margin-top: 0;
+    padding-top: 0;
 }
 /* 캡션/보조 텍스트 */
 [data-testid="stCaptionContainer"], .stCaption {
@@ -122,6 +153,55 @@ hr {
     border-radius: 8px !important;
     padding: 10px 20px !important;
     font-weight: 500 !important;
+}
+/* 상태 배지 스타일 */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.status-badge-assigned {
+    background-color: #d1fae5;
+    color: #10b981;
+}
+.status-badge-unassigned {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
+.status-badge-permit {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+.status-badge-scheduled {
+    background-color: #dbeafe;
+    color: #3b82f6;
+}
+.status-badge-progress {
+    background-color: #fef3c7;
+    color: #f59e0b;
+}
+.status-badge-completed {
+    background-color: #d1fae5;
+    color: #10b981;
+}
+/* 테이블 행 호버 효과 */
+.stMarkdown:has(> div) {
+    transition: background-color 0.2s;
+}
+/* 페이지네이션 버튼 스타일 */
+[data-testid="stButton"] button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+/* 사이드바 스타일 개선 */
+section[data-testid="stSidebar"] {
+    padding: 20px;
+}
+section[data-testid="stSidebar"] .stButton > button {
+    width: 100%;
 }
 </style>
 """

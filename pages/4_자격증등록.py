@@ -9,8 +9,10 @@ from streamlit_utils.theme import apply_localhost_theme
 apply_localhost_theme()
 st.title('📜 자격증등록')
 
-if not check_api_connection():
-    st.error('API에 연결할 수 없습니다. Flask 서버를 먼저 실행하세요.')
+is_connected, error_msg = check_api_connection()
+if not is_connected:
+    st.error(f'API 연결 실패: {error_msg}')
+    st.info('💡 Flask 서버를 먼저 실행하세요: `python run_api.py`')
     st.stop()
 
 # 자격증 종류 (화면 표시용)

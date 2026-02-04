@@ -9,8 +9,10 @@ from streamlit_utils.theme import apply_localhost_theme
 apply_localhost_theme()
 st.title('➕ 현장등록')
 
-if not check_api_connection():
-    st.error('API에 연결할 수 없습니다. Flask 서버를 먼저 실행하세요.')
+is_connected, error_msg = check_api_connection()
+if not is_connected:
+    st.error(f'API 연결 실패: {error_msg}')
+    st.info('💡 Flask 서버를 먼저 실행하세요: `python run_api.py`')
     st.stop()
 
 with st.form('site_form'):
@@ -27,7 +29,7 @@ with st.form('site_form'):
     st.subheader('선택 입력')
     state = st.selectbox(
         '현장상태',
-        ['건축허가', '착공예정', '착공중', '준공'],
+        ['건축허가', '착공예정', '공사 중', '공사 중단', '준공'],
         index=0,
     )
     permit_date = st.text_input('건축허가일', placeholder='YYYY-MM-DD')

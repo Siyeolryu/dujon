@@ -20,26 +20,55 @@ def _generate_site_id():
 
 @bp.route('/sites', methods=['GET'])
 def get_sites():
-    """현장 목록 조회. 쿼리: company, status, state"""
+    """현장 목록 조회. 쿼리: company, status, state, limit, offset"""
     try:
         db = get_db()
-        sites = db.get_all_sites()
-
+        
+        # 페이지네이션 파라미터
+        limit = request.args.get('limit', type=int)
+        offset = request.args.get('offset', type=int, default=0)
+        
+        # 필터 파라미터
         company = request.args.get('company')
         status = request.args.get('status')
         state = request.args.get('state')
 
-        if company:
-            sites = [s for s in sites if s['회사구분'] == company]
-        if status:
-            sites = [s for s in sites if s['배정상태'] == status]
-        if state:
-            sites = [s for s in sites if s['현장상태'] == state]
+        # 서버 사이드 페이지네이션 지원 여부 확인
+        if hasattr(db, 'get_sites_paginated'):
+            # 페이지네이션 지원 메서드 사용
+            result = db.get_sites_paginated(
+                company=company,
+                status=status,
+                state=state,
+                limit=limit,
+                offset=offset,
+            )
+            sites = result.get('data', [])
+            total_count = result.get('total', len(sites))
+        else:
+            # 기존 방식 (클라이언트 사이드 필터링)
+            sites = db.get_all_sites()
+
+            if company:
+                sites = [s for s in sites if s['회사구분'] == company]
+            if status:
+                sites = [s for s in sites if s['배정상태'] == status]
+            if state:
+                sites = [s for s in sites if s['현장상태'] == state]
+
+            total_count = len(sites)
+            
+            # 클라이언트 사이드 페이지네이션
+            if limit:
+                sites = sites[offset:offset + limit]
 
         return jsonify({
             'success': True,
             'data': sites,
             'count': len(sites),
+            'total': total_count,
+            'limit': limit,
+            'offset': offset,
             'timestamp': datetime.now().isoformat(),
         })
     except Exception as e:
