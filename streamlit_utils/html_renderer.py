@@ -91,11 +91,11 @@ def render_html_app(html_file='site-management.html', height=800, key=None):
         )
         
         # Streamlit components로 렌더링
+        # 참고: components.html()은 key 인자를 지원하지 않는 버전이 있음 (Streamlit Cloud 등)
         return components.html(
             html_content,
             height=height,
-            scrolling=True,
-            key=key
+            scrolling=True
         )
     except FileNotFoundError as e:
         import streamlit as st

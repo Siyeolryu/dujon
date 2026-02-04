@@ -1,6 +1,6 @@
 """
 Streamlit용 REST API 클라이언트.
-기존 Flask API (API_BASE_URL)를 호출합니다.
+환경에 따라 Flask API 또는 Supabase 직접 연결을 사용합니다.
 """
 import os
 import requests
@@ -51,6 +51,18 @@ API_BASE = _get_api_base()
 TIMEOUT = 15
 HEADERS = {'Content-Type': 'application/json'}
 
+# API 모드 확인 및 Supabase 서비스 초기화
+_api_mode = os.getenv('API_MODE', '').strip().lower() or 'flask'
+_supabase_service = None
+
+if _api_mode == 'supabase':
+    try:
+        from api.services.supabase_service import supabase_service
+        _supabase_service = supabase_service
+    except ImportError:
+        # Supabase 서비스가 없으면 Flask API 사용
+        _api_mode = 'flask'
+
 
 def _url(path):
     """경로 앞에 / 없으면 붙임. /api 로 시작하는 path 사용."""
@@ -82,14 +94,58 @@ def _check(res, allow_404=False):
 
 # --- Stats ---
 def get_stats():
-    """GET /api/stats"""
-    r = requests.get(_url('/api/stats'), timeout=TIMEOUT, headers=HEADERS)
-    return _check(r)
+    """GET /api/stats 또는 Supabase 직접 통계 계산"""
+    # Supabase 직접 연결 모드일 때
+    if _api_mode == 'supabase' and _supabase_service:
+        try:
+            sites = _supabase_service.get_all_sites()
+            personnel = _supabase_service.get_all_personnel()
+            certificates = _supabase_service.get_all_certificates()
+            
+            # 통계 계산
+            stats = {
+                'total_sites': len(sites),
+                'assigned_sites': len([s for s in sites if s.get('배정상태') == '배정완료']),
+                'unassigned_sites': len([s for s in sites if s.get('배정상태') == '미배정']),
+                'total_personnel': len(personnel),
+                'available_personnel': len([p for p in personnel if p.get('현재상태') == '투입가능']),
+                'total_certificates': len(certificates),
+                'available_certificates': len([c for c in certificates if c.get('사용가능여부') == '사용가능']),
+            }
+            return stats, None
+        except Exception as e:
+            return None, f"Supabase 통계 계산 실패: {str(e)}"
+    
+    # Flask API 모드
+    try:
+        r = requests.get(_url('/api/stats'), timeout=TIMEOUT, headers=HEADERS)
+        return _check(r)
+    except requests.exceptions.MissingSchema:
+        try:
+            r = requests.get('/api/stats', timeout=TIMEOUT, headers=HEADERS)
+            return _check(r)
+        except Exception as e:
+            return None, f"API 연결 실패: {str(e)}"
 
 
 # --- Sites ---
 def get_sites(company=None, status=None, state=None, limit=None, offset=None):
-    """GET /api/sites?company=&status=&state=&limit=&offset="""
+    """GET /api/sites 또는 Supabase 직접 조회"""
+    # Supabase 직접 연결 모드일 때
+    if _api_mode == 'supabase' and _supabase_service:
+        try:
+            result = _supabase_service.get_sites_paginated(
+                company=company,
+                status=status,
+                state=state,
+                limit=limit,
+                offset=offset or 0
+            )
+            return result, None
+        except Exception as e:
+            return None, f"Supabase 조회 실패: {str(e)}"
+    
+    # Flask API 모드
     params = {}
     if company:
         params['company'] = company
@@ -101,22 +157,72 @@ def get_sites(company=None, status=None, state=None, limit=None, offset=None):
         params['limit'] = limit
     if offset is not None:
         params['offset'] = offset
-    r = requests.get(_url('/api/sites'), params=params, timeout=TIMEOUT, headers=HEADERS)
-    return _check(r)
+    try:
+        r = requests.get(_url('/api/sites'), params=params, timeout=TIMEOUT, headers=HEADERS)
+        return _check(r)
+    except requests.exceptions.MissingSchema:
+        try:
+            r = requests.get('/api/sites', params=params, timeout=TIMEOUT, headers=HEADERS)
+            return _check(r)
+        except Exception as e:
+            return None, f"API 연결 실패: {str(e)}"
 
 
 def search_sites(q):
-    """GET /api/sites/search?q="""
+    """GET /api/sites/search 또는 Supabase 직접 검색"""
     if not (q or str(q).strip()):
         return [], None
-    r = requests.get(_url('/api/sites/search'), params={'q': q.strip()}, timeout=TIMEOUT, headers=HEADERS)
-    return _check(r)
+    
+    # Supabase 직접 연결 모드일 때
+    if _api_mode == 'supabase' and _supabase_service:
+        try:
+            all_sites = _supabase_service.get_all_sites()
+            # 클라이언트 사이드 검색
+            query = q.strip().lower()
+            filtered = [
+                s for s in all_sites
+                if query in (s.get('현장명', '') or '').lower() or
+                   query in (s.get('주소', '') or '').lower()
+            ]
+            return filtered, None
+        except Exception as e:
+            return None, f"Supabase 검색 실패: {str(e)}"
+    
+    # Flask API 모드
+    try:
+        r = requests.get(_url('/api/sites/search'), params={'q': q.strip()}, timeout=TIMEOUT, headers=HEADERS)
+        return _check(r)
+    except requests.exceptions.MissingSchema:
+        try:
+            r = requests.get('/api/sites/search', params={'q': q.strip()}, timeout=TIMEOUT, headers=HEADERS)
+            return _check(r)
+        except Exception as e:
+            return None, f"API 연결 실패: {str(e)}"
 
 
 def get_site(site_id):
-    """GET /api/sites/<id>"""
-    r = requests.get(_url(f'/api/sites/{site_id}'), timeout=TIMEOUT, headers=HEADERS)
-    return _check(r, allow_404=True)
+    """GET /api/sites/<id> 또는 Supabase 직접 조회"""
+    # Supabase 직접 연결 모드일 때
+    if _api_mode == 'supabase' and _supabase_service:
+        try:
+            site = _supabase_service.get_site_by_id(site_id)
+            if site:
+                return site, None
+            else:
+                return None, "현장을 찾을 수 없습니다"
+        except Exception as e:
+            return None, f"Supabase 조회 실패: {str(e)}"
+    
+    # Flask API 모드
+    try:
+        r = requests.get(_url(f'/api/sites/{site_id}'), timeout=TIMEOUT, headers=HEADERS)
+        return _check(r, allow_404=True)
+    except requests.exceptions.MissingSchema:
+        try:
+            r = requests.get(f'/api/sites/{site_id}', timeout=TIMEOUT, headers=HEADERS)
+            return _check(r, allow_404=True)
+        except Exception as e:
+            return None, f"API 연결 실패: {str(e)}"
 
 
 def create_site(payload):
@@ -126,51 +232,127 @@ def create_site(payload):
 
 
 def assign_site(site_id, manager_id, certificate_id, version=None):
-    """POST /api/sites/<id>/assign"""
+    """POST /api/sites/<id>/assign 또는 Supabase 직접 배정"""
+    # Supabase 직접 연결 모드일 때
+    if _api_mode == 'supabase' and _supabase_service:
+        try:
+            _supabase_service.assign_site(site_id, manager_id, certificate_id)
+            return {'success': True}, None
+        except Exception as e:
+            return None, f"Supabase 배정 실패: {str(e)}"
+    
+    # Flask API 모드
     body = {'manager_id': manager_id, 'certificate_id': certificate_id}
     if version:
         body['version'] = version
     h = dict(HEADERS)
     if version:
         h['If-Match'] = version
-    r = requests.post(_url(f'/api/sites/{site_id}/assign'), json=body, timeout=TIMEOUT, headers=h)
-    return _check(r)
+    try:
+        r = requests.post(_url(f'/api/sites/{site_id}/assign'), json=body, timeout=TIMEOUT, headers=h)
+        return _check(r)
+    except requests.exceptions.MissingSchema:
+        try:
+            r = requests.post(f'/api/sites/{site_id}/assign', json=body, timeout=TIMEOUT, headers=h)
+            return _check(r)
+        except Exception as e:
+            return None, f"API 연결 실패: {str(e)}"
 
 
 def unassign_site(site_id, version=None):
-    """POST /api/sites/<id>/unassign"""
+    """POST /api/sites/<id>/unassign 또는 Supabase 직접 해제"""
+    # Supabase 직접 연결 모드일 때
+    if _api_mode == 'supabase' and _supabase_service:
+        try:
+            _supabase_service.unassign_site(site_id)
+            return {'success': True}, None
+        except Exception as e:
+            return None, f"Supabase 해제 실패: {str(e)}"
+    
+    # Flask API 모드
     body = {}
     if version:
         body['version'] = version
     h = dict(HEADERS)
     if version:
         h['If-Match'] = version
-    r = requests.post(_url(f'/api/sites/{site_id}/unassign'), json=body or None, timeout=TIMEOUT, headers=h)
-    return _check(r)
+    try:
+        r = requests.post(_url(f'/api/sites/{site_id}/unassign'), json=body or None, timeout=TIMEOUT, headers=h)
+        return _check(r)
+    except requests.exceptions.MissingSchema:
+        try:
+            r = requests.post(f'/api/sites/{site_id}/unassign', json=body or None, timeout=TIMEOUT, headers=h)
+            return _check(r)
+        except Exception as e:
+            return None, f"API 연결 실패: {str(e)}"
 
 
 # --- Personnel ---
 def get_personnel(status=None, role=None):
-    """GET /api/personnel"""
+    """GET /api/personnel 또는 Supabase 직접 조회"""
+    # Supabase 직접 연결 모드일 때
+    if _api_mode == 'supabase' and _supabase_service:
+        try:
+            personnel_list = _supabase_service.get_all_personnel()
+            # 필터링 (클라이언트 사이드)
+            if status:
+                personnel_list = [p for p in personnel_list if p.get('현재상태', '') == status]
+            if role:
+                # role 필터는 직책(position)으로 필터링
+                personnel_list = [p for p in personnel_list if p.get('직책', '') == role]
+            return personnel_list, None
+        except Exception as e:
+            return None, f"Supabase 조회 실패: {str(e)}"
+    
+    # Flask API 모드
     params = {}
     if status:
         params['status'] = status
     if role:
         params['role'] = role
-    r = requests.get(_url('/api/personnel'), params=params or None, timeout=TIMEOUT, headers=HEADERS)
-    return _check(r)
+    try:
+        r = requests.get(_url('/api/personnel'), params=params or None, timeout=TIMEOUT, headers=HEADERS)
+        return _check(r)
+    except requests.exceptions.MissingSchema:
+        # URL 스키마가 없으면 상대 경로로 시도
+        try:
+            r = requests.get('/api/personnel', params=params or None, timeout=TIMEOUT, headers=HEADERS)
+            return _check(r)
+        except Exception as e:
+            return None, f"API 연결 실패: {str(e)}"
 
 
 # --- Certificates ---
 def get_certificates(available=None):
-    """GET /api/certificates. available: True/'true' | False/'false' | None(전체)"""
+    """GET /api/certificates 또는 Supabase 직접 조회"""
+    # Supabase 직접 연결 모드일 때
+    if _api_mode == 'supabase' and _supabase_service:
+        try:
+            cert_list = _supabase_service.get_all_certificates()
+            # 필터링 (클라이언트 사이드)
+            if available is True or available == 'true':
+                cert_list = [c for c in cert_list if c.get('사용가능여부', '') == '사용가능']
+            elif available is False or available == 'false':
+                cert_list = [c for c in cert_list if c.get('사용가능여부', '') != '사용가능']
+            return cert_list, None
+        except Exception as e:
+            return None, f"Supabase 조회 실패: {str(e)}"
+    
+    # Flask API 모드
     params = {}
     if available is True or available == 'true':
         params['available'] = 'true'
     elif available is False or available == 'false':
         params['available'] = 'false'
-    r = requests.get(_url('/api/certificates'), params=params or None, timeout=TIMEOUT, headers=HEADERS)
-    return _check(r)
+    try:
+        r = requests.get(_url('/api/certificates'), params=params or None, timeout=TIMEOUT, headers=HEADERS)
+        return _check(r)
+    except requests.exceptions.MissingSchema:
+        try:
+            r = requests.get('/api/certificates', params=params or None, timeout=TIMEOUT, headers=HEADERS)
+            return _check(r)
+        except Exception as e:
+            return None, f"API 연결 실패: {str(e)}"
 
 
 def create_certificate(payload):
