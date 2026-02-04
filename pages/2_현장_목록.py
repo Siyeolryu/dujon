@@ -39,11 +39,15 @@ if 'show_assign_modal' not in st.session_state:
 
 st.title('📋 현장 목록')
 
-is_connected, error_msg = check_api_connection()
-if not is_connected:
-    st.error(f'API 연결 실패: {error_msg}')
-    st.info('💡 Flask 서버를 먼저 실행하세요: `python run_api.py`')
-    st.stop()
+# API 연결 확인 (Supabase 모드일 때는 체크 건너뛰기)
+import os
+api_mode = os.getenv('API_MODE', '').strip().lower() or 'flask'
+if api_mode != 'supabase':
+    is_connected, error_msg = check_api_connection()
+    if not is_connected:
+        st.error(f'API 연결 실패: {error_msg}')
+        st.info('💡 Flask 서버를 먼저 실행하세요: `python run_api.py`')
+        st.stop()
 
 # ========== 쿼리 파라미터에서 필터 읽기 ==========
 query_params = st.query_params
