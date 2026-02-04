@@ -7,7 +7,7 @@ from streamlit_utils.api_client import check_api_connection, get_stats
 from streamlit_utils.theme import apply_localhost_theme, render_top_nav
 
 apply_localhost_theme()
-render_top_nav(current_page="대시보드")
+render_top_nav(current_page="1_dashboard")
 st.title("📊 대시보드")
 
 
@@ -70,21 +70,18 @@ stats = _normalize_stats(raw_stats)
 if stats_err and is_connected:
     st.warning(f"통계 조회 실패: {stats_err}. 0으로 표시합니다.")
 
-# ----- 현황 요약 메트릭 (클릭 시 현장 목록 필터 이동) -----
+# ----- 로컬호스트와 동일한 4개 메트릭 카드 -----
 st.markdown("### 현황 요약")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.metric(label="전체 현장", value=stats["total_sites"])
-    st.markdown('[📋 현장 목록 보기](/현장_목록)')
 
 with col2:
     st.metric(label="미배정 현장", value=stats["unassigned"])
-    st.markdown('[📋 미배정 현장 보기](/현장_목록?status=미배정)')
 
 with col3:
     st.metric(label="배정완료", value=stats["assigned"])
-    st.markdown('[📋 배정완료 현장 보기](/현장_목록?status=배정완료)')
 
 with col4:
     st.metric(

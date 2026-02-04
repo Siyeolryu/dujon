@@ -120,12 +120,8 @@ def get_stats():
     try:
         r = requests.get(_url('/api/stats'), timeout=TIMEOUT, headers=HEADERS)
         return _check(r)
-    except requests.exceptions.MissingSchema:
-        try:
-            r = requests.get('/api/stats', timeout=TIMEOUT, headers=HEADERS)
-            return _check(r)
-        except Exception as e:
-            return None, f"API 연결 실패: {str(e)}"
+    except Exception as e:
+        return None, f"API 연결 실패: {str(e)}"
 
 
 # --- Sites ---
@@ -160,12 +156,8 @@ def get_sites(company=None, status=None, state=None, limit=None, offset=None):
     try:
         r = requests.get(_url('/api/sites'), params=params, timeout=TIMEOUT, headers=HEADERS)
         return _check(r)
-    except requests.exceptions.MissingSchema:
-        try:
-            r = requests.get('/api/sites', params=params, timeout=TIMEOUT, headers=HEADERS)
-            return _check(r)
-        except Exception as e:
-            return None, f"API 연결 실패: {str(e)}"
+    except Exception as e:
+        return None, f"API 연결 실패: {str(e)}"
 
 
 def search_sites(q):
@@ -192,12 +184,8 @@ def search_sites(q):
     try:
         r = requests.get(_url('/api/sites/search'), params={'q': q.strip()}, timeout=TIMEOUT, headers=HEADERS)
         return _check(r)
-    except requests.exceptions.MissingSchema:
-        try:
-            r = requests.get('/api/sites/search', params={'q': q.strip()}, timeout=TIMEOUT, headers=HEADERS)
-            return _check(r)
-        except Exception as e:
-            return None, f"API 연결 실패: {str(e)}"
+    except Exception as e:
+        return None, f"API 연결 실패: {str(e)}"
 
 
 def get_site(site_id):
@@ -217,12 +205,8 @@ def get_site(site_id):
     try:
         r = requests.get(_url(f'/api/sites/{site_id}'), timeout=TIMEOUT, headers=HEADERS)
         return _check(r, allow_404=True)
-    except requests.exceptions.MissingSchema:
-        try:
-            r = requests.get(f'/api/sites/{site_id}', timeout=TIMEOUT, headers=HEADERS)
-            return _check(r, allow_404=True)
-        except Exception as e:
-            return None, f"API 연결 실패: {str(e)}"
+    except Exception as e:
+        return None, f"API 연결 실패: {str(e)}"
 
 
 def create_site(payload):
@@ -251,12 +235,8 @@ def assign_site(site_id, manager_id, certificate_id, version=None):
     try:
         r = requests.post(_url(f'/api/sites/{site_id}/assign'), json=body, timeout=TIMEOUT, headers=h)
         return _check(r)
-    except requests.exceptions.MissingSchema:
-        try:
-            r = requests.post(f'/api/sites/{site_id}/assign', json=body, timeout=TIMEOUT, headers=h)
-            return _check(r)
-        except Exception as e:
-            return None, f"API 연결 실패: {str(e)}"
+    except Exception as e:
+        return None, f"API 연결 실패: {str(e)}"
 
 
 def unassign_site(site_id, version=None):
@@ -279,12 +259,8 @@ def unassign_site(site_id, version=None):
     try:
         r = requests.post(_url(f'/api/sites/{site_id}/unassign'), json=body or None, timeout=TIMEOUT, headers=h)
         return _check(r)
-    except requests.exceptions.MissingSchema:
-        try:
-            r = requests.post(f'/api/sites/{site_id}/unassign', json=body or None, timeout=TIMEOUT, headers=h)
-            return _check(r)
-        except Exception as e:
-            return None, f"API 연결 실패: {str(e)}"
+    except Exception as e:
+        return None, f"API 연결 실패: {str(e)}"
 
 
 # --- Personnel ---
@@ -313,13 +289,8 @@ def get_personnel(status=None, role=None):
     try:
         r = requests.get(_url('/api/personnel'), params=params or None, timeout=TIMEOUT, headers=HEADERS)
         return _check(r)
-    except requests.exceptions.MissingSchema:
-        # URL 스키마가 없으면 상대 경로로 시도
-        try:
-            r = requests.get('/api/personnel', params=params or None, timeout=TIMEOUT, headers=HEADERS)
-            return _check(r)
-        except Exception as e:
-            return None, f"API 연결 실패: {str(e)}"
+    except Exception as e:
+        return None, f"API 연결 실패: {str(e)}"
 
 
 # --- Certificates ---
@@ -347,12 +318,8 @@ def get_certificates(available=None):
     try:
         r = requests.get(_url('/api/certificates'), params=params or None, timeout=TIMEOUT, headers=HEADERS)
         return _check(r)
-    except requests.exceptions.MissingSchema:
-        try:
-            r = requests.get('/api/certificates', params=params or None, timeout=TIMEOUT, headers=HEADERS)
-            return _check(r)
-        except Exception as e:
-            return None, f"API 연결 실패: {str(e)}"
+    except Exception as e:
+        return None, f"API 연결 실패: {str(e)}"
 
 
 def create_certificate(payload):

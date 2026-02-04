@@ -109,6 +109,6 @@ if submitted:
             if data:
                 st.info(f"부여된 현장ID: {data.get('현장ID', '-')}")
             st.caption('현장 목록에서 확인하세요.')
-            st.markdown('[📋 현장 목록 보기](/현장_목록)')
+            st.page_link('pages/2_현장_목록.py', label='📋 현장 목록 보기', icon='📋')
             if st.button('➕ 다른 현장 등록'):
                 st.rerun()
