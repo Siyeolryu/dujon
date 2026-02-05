@@ -4,7 +4,14 @@
 맵·이모지 없음, 밝은 색상·가독성 중심.
 """
 import streamlit as st
-from streamlit_utils.api_client import check_api_connection, get_stats
+from streamlit_utils.api_client import (
+    check_api_connection,
+    get_stats,
+    get_sites,
+    get_personnel,
+    get_certificates,
+    assign_site
+)
 from streamlit_utils.theme import apply_localhost_theme
 
 apply_localhost_theme()
@@ -82,6 +89,29 @@ st.markdown("""
         border-radius: 10px;
         margin: 10px 0;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    /* 배정 섹션 스타일 */
+    .stExpander {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .stButton button[kind="primary"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 20px;
+        transition: all 0.3s ease;
+    }
+
+    .stButton button[kind="primary"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -193,6 +223,101 @@ with col5:
 
 with col6:
     st.metric(label="전체 자격증", value=stats["total_certificates"])
+
+# ----- 빠른 배정 섹션 -----
+if stats["unassigned"] > 0 and is_connected:
+    st.markdown("---")
+    st.markdown('<div class="section-header">⚡ 빠른 배정</div>', unsafe_allow_html=True)
+
+    # 미배정 현장 가져오기
+    unassigned_sites, sites_err = get_sites(status='미배정', limit=10)
+
+    if sites_err:
+        st.error(f"미배정 현장 조회 실패: {sites_err}")
+    elif not unassigned_sites:
+        st.info("미배정 현장이 없습니다.")
+    else:
+        # 투입 가능한 소장 목록
+        available_personnel, personnel_err = get_personnel(status='투입가능')
+        if personnel_err:
+            st.warning(f"인력 목록 조회 실패: {personnel_err}")
+            available_personnel = []
+
+        # 사용 가능한 자격증 목록
+        available_certificates, cert_err = get_certificates(available=True)
+        if cert_err:
+            st.warning(f"자격증 목록 조회 실패: {cert_err}")
+            available_certificates = []
+
+        # 소장만 필터링 (직책이 '소장'인 인력)
+        managers = [p for p in available_personnel if p.get('직책') == '소장']
+
+        if not managers:
+            st.warning("투입 가능한 소장이 없습니다. 인력 목록에서 소장을 추가해주세요.")
+        elif not available_certificates:
+            st.warning("사용 가능한 자격증이 없습니다.")
+        else:
+            st.caption(f"🔹 미배정 현장 {len(unassigned_sites)}개 중 최대 10개를 표시합니다.")
+
+            # 현장 목록을 테이블 형태로 표시
+            for idx, site in enumerate(unassigned_sites):
+                site_id = site.get('현장ID')
+                site_name = site.get('현장명', '(이름 없음)')
+                site_state = site.get('현장상태', '-')
+                address = site.get('주소', '-')
+
+                with st.expander(f"🏗️ {site_name} ({site_state})"):
+                    col_info, col_assign = st.columns([2, 1])
+
+                    with col_info:
+                        st.markdown(f"**현장 정보**")
+                        st.markdown(f"- 현장ID: `{site_id}`")
+                        st.markdown(f"- 주소: {address}")
+                        st.markdown(f"- 상태: {site_state}")
+
+                    with col_assign:
+                        st.markdown("**배정 설정**")
+
+                        # 소장 선택
+                        manager_options = {
+                            f"{p.get('인력ID')} - {p.get('이름', '(이름없음)')}": p.get('인력ID')
+                            for p in managers
+                        }
+                        selected_manager_key = st.selectbox(
+                            "소장 선택",
+                            options=list(manager_options.keys()),
+                            key=f"manager_{site_id}_{idx}"
+                        )
+                        selected_manager_id = manager_options[selected_manager_key]
+
+                        # 자격증 선택
+                        cert_options = {
+                            f"{c.get('자격증ID')} - {c.get('자격증명', '(이름없음)')} ({c.get('소유자', '-')})": c.get('자격증ID')
+                            for c in available_certificates
+                        }
+                        selected_cert_key = st.selectbox(
+                            "자격증 선택",
+                            options=list(cert_options.keys()),
+                            key=f"cert_{site_id}_{idx}"
+                        )
+                        selected_cert_id = cert_options[selected_cert_key]
+
+                        # 배정 버튼
+                        if st.button("✅ 배정하기", key=f"assign_btn_{site_id}_{idx}", type="primary"):
+                            with st.spinner("배정 중..."):
+                                result, error = assign_site(
+                                    site_id=site_id,
+                                    manager_id=selected_manager_id,
+                                    certificate_id=selected_cert_id
+                                )
+
+                                if error:
+                                    st.error(f"배정 실패: {error}")
+                                else:
+                                    st.success(f"✅ {site_name}이(가) 성공적으로 배정되었습니다!")
+                                    st.balloons()
+                                    # 대시보드 새로고침
+                                    st.rerun()
 
 # ----- 탭으로 구분된 상세 뷰 -----
 st.markdown("---")
@@ -489,7 +614,3 @@ with tab3:
 
         st.markdown('<div class="section-header">📜 자격증 요약</div>', unsafe_allow_html=True)
         st.caption(f"사용가능 {stats['available_certificates']} / 전체 {stats['total_certificates']}")
-
-# 미배정 5건 이상 시 강조
-if stats["unassigned"] >= 5 and is_connected:
-    st.warning("미배정 현장이 5건 이상입니다. 현장 목록에서 배정을 진행해 주세요.")
