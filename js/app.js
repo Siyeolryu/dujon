@@ -104,8 +104,10 @@ const App = {
     currentSites: [],
 
     async init() {
-        console.log('🚀 현장배정 관리 시스템 시작...');
-        console.log('📡 API 모드:', CONFIG.API_MODE);
+        if (CONFIG.DEBUG) {
+            console.log('🚀 현장배정 관리 시스템 시작...');
+            console.log('📡 API 모드:', CONFIG.API_MODE);
+        }
         const healthy = await DataAPI.healthCheck();
         const statusEl = document.getElementById('serverStatus');
         if (statusEl) {
@@ -126,7 +128,7 @@ const App = {
         }
         const lastEl = document.getElementById('lastUpdated');
         if (lastEl) lastEl.textContent = new Date().toLocaleTimeString('ko-KR');
-        console.log('✅ 초기화 완료');
+        if (CONFIG.DEBUG) console.log('✅ 초기화 완료');
     },
 
     async loadAll() {

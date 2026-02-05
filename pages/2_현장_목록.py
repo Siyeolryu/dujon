@@ -15,10 +15,9 @@ from streamlit_utils.api_client import (
     unassign_site,
     check_api_connection,
 )
-from streamlit_utils.theme import apply_localhost_theme, render_top_nav
+from streamlit_utils.theme import apply_localhost_theme
 
 apply_localhost_theme()
-render_top_nav(current_page="2_site_list")
 
 # 필터 탭 스타일 추가
 st.markdown("""
@@ -115,7 +114,7 @@ if 'selected_site_id' not in st.session_state:
 if 'show_assign_modal' not in st.session_state:
     st.session_state.show_assign_modal = False
 
-st.title('📋 현장 목록')
+st.title('현장 목록')
 
 # API 연결 확인 (Supabase 모드일 때는 체크 건너뛰기)
 import os
@@ -124,7 +123,7 @@ if api_mode != 'supabase':
     is_connected, error_msg = check_api_connection()
     if not is_connected:
         st.error(f'API 연결 실패: {error_msg}')
-        st.info('💡 Flask 서버를 먼저 실행하세요: `python run_api.py`')
+        st.info('Flask 서버를 먼저 실행하세요: `python run_api.py`')
         st.stop()
 
 # ========== 쿼리 파라미터에서 필터 읽기 ==========
@@ -134,7 +133,7 @@ initial_company = query_params.get('company', [''])[0] if 'company' in query_par
 
 # ========== 필터 섹션 ==========
 st.markdown('<div class="filter-section-container">', unsafe_allow_html=True)
-st.subheader('🔍 필터 및 검색')
+st.subheader('필터 및 검색')
 
 # 필터 탭 그룹 - 최적화된 레이아웃
 filter_row1 = st.columns([1.1, 1.1, 1.3, 2.5])
@@ -201,7 +200,7 @@ if search_input != st.session_state.search_query:
 selected_manager = ''
 date_start = None
 date_end = None
-with st.expander('📅 고급 필터 (날짜 범위, 담당소장)', expanded=False):
+with st.expander('고급 필터 (날짜 범위, 담당소장)', expanded=False):
     adv_col1, adv_col2, adv_col3 = st.columns(3)
     
     with adv_col1:
@@ -229,7 +228,7 @@ with st.expander('📅 고급 필터 (날짜 범위, 담당소장)', expanded=Fa
             key='filter_date_end',
         )
     
-    if st.button('🔄 필터 초기화', use_container_width=True):
+    if st.button('필터 초기화', use_container_width=True):
         st.session_state.filter_company_radio = ''
         st.session_state.filter_status_radio = ''
         st.session_state.filter_state_radio = ''
@@ -358,15 +357,15 @@ def _render_pagination(key_suffix='', bottom_only=False):
         with c1:
             st.write('')
         with c2:
-            st.caption(f'📊 총 {total_count}개 현장 | 페이지 {st.session_state.current_page}/{total_pages}')
+            st.caption(f'총 {total_count}개 현장 | 페이지 {st.session_state.current_page}/{total_pages}')
         with c3:
             prev_col, next_col = st.columns(2)
             with prev_col:
-                if st.button('◀ 이전', disabled=st.session_state.current_page <= 1, use_container_width=True, key=f'prev{key_suffix}'):
+                if st.button('이전', disabled=st.session_state.current_page <= 1, use_container_width=True, key=f'prev{key_suffix}'):
                     st.session_state.current_page -= 1
                     st.rerun()
             with next_col:
-                if st.button('다음 ▶', disabled=st.session_state.current_page >= total_pages, use_container_width=True, key=f'next{key_suffix}'):
+                if st.button('다음', disabled=st.session_state.current_page >= total_pages, use_container_width=True, key=f'next{key_suffix}'):
                     st.session_state.current_page += 1
                     st.rerun()
         return
@@ -384,22 +383,22 @@ def _render_pagination(key_suffix='', bottom_only=False):
             st.session_state.current_page = 1
             st.rerun()
     with c2:
-        st.caption(f'📊 총 {total_count}개 현장 | 페이지 {st.session_state.current_page}/{total_pages}')
+        st.caption(f'총 {total_count}개 현장 | 페이지 {st.session_state.current_page}/{total_pages}')
     with c3:
         prev_col, next_col = st.columns(2)
         with prev_col:
-            if st.button('◀ 이전', disabled=st.session_state.current_page <= 1, use_container_width=True, key=f'prev{key_suffix}'):
+            if st.button('이전', disabled=st.session_state.current_page <= 1, use_container_width=True, key=f'prev{key_suffix}'):
                 st.session_state.current_page -= 1
                 st.rerun()
         with next_col:
-            if st.button('다음 ▶', disabled=st.session_state.current_page >= total_pages, use_container_width=True, key=f'next{key_suffix}'):
+            if st.button('다음', disabled=st.session_state.current_page >= total_pages, use_container_width=True, key=f'next{key_suffix}'):
                 st.session_state.current_page += 1
                 st.rerun()
 
 
 # ========== 소장 배정 패널 (필터 바로 아래, 목록 위 · 항상 눈에 띄게) ==========
 if st.session_state.show_assign_modal and st.session_state.selected_site_id:
-    with st.expander('📌 소장 배정', expanded=True):
+    with st.expander('소장 배정', expanded=True):
         st.markdown('<div class="assign-panel-box">', unsafe_allow_html=True)
         site_id = st.session_state.selected_site_id
         detail, err = get_site(site_id)
@@ -433,7 +432,7 @@ if st.session_state.show_assign_modal and st.session_state.selected_site_id:
                     st.write('')
                     col_assign, col_cancel = st.columns(2)
                     with col_assign:
-                        if st.button('✅ 배정하기', use_container_width=True, type='primary', key='btn_assign_do'):
+                        if st.button('배정하기', use_container_width=True, type='primary', key='btn_assign_do'):
                             mid = manager_options.get(sel_manager)
                             cid = cert_options.get(sel_cert)
                             if mid and cid:
@@ -448,7 +447,7 @@ if st.session_state.show_assign_modal and st.session_state.selected_site_id:
                             else:
                                 st.error('소장 또는 자격증을 선택하세요.')
                     with col_cancel:
-                        if st.button('❌ 취소', use_container_width=True, key='btn_assign_cancel'):
+                        if st.button('취소', use_container_width=True, key='btn_assign_cancel'):
                             st.session_state.show_assign_modal = False
                             st.session_state.selected_site_id = None
                             st.rerun()
@@ -512,7 +511,7 @@ st.dataframe(
 )
 
 # 빠른 액션: 행별 배정/해제/상세 (접이식, 테이블 가독성 우선)
-with st.expander('🔧 빠른 액션 (행별 배정·해제·상세)', expanded=False):
+with st.expander('빠른 액션 (행별 배정·해제·상세)', expanded=False):
     st.caption('위 "현장 선택 (액션 적용)" 드롭다운으로도 동일한 액션을 사용할 수 있습니다.')
     for idx, row in df.iterrows():
         site_id = row['현장ID']
@@ -550,7 +549,7 @@ _render_pagination(key_suffix='_bottom', bottom_only=True)
 # ========== 상세 정보 표시 ==========
 if st.session_state.selected_site_id and not st.session_state.show_assign_modal:
     st.markdown('---')
-    st.subheader('📄 현장 상세 정보')
+    st.subheader('현장 상세 정보')
     
     detail, err = get_site(st.session_state.selected_site_id)
     if err and not detail:

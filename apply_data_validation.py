@@ -15,7 +15,7 @@ import os
 if sys.platform == 'win32':
     try:
         sys.stdout.reconfigure(encoding='utf-8')
-    except:
+    except Exception:
         pass
 
 # 필요한 모듈 임포트

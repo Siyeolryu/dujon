@@ -9,7 +9,7 @@ LOCALHOST_CSS = """
 <style>
 /* 전역: 로컬호스트 폰트/배경 톤 유지 */
 [data-testid="stAppViewContainer"] {
-    background-color: #F8F9FA;
+    background-color: #FAFBFC;
     font-family: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
 }
 [data-testid="stHeader"] {
@@ -49,10 +49,18 @@ section[data-testid="stSidebar"] > div {
     padding: 20px 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-/* 사이드바 */
+/* 사이드바: 네비 링크 위로, "Streamlit app" 텍스트는 최하단으로 */
 section[data-testid="stSidebar"] {
     background: #fff;
     box-shadow: 1px 0 3px rgba(0,0,0,0.06);
+    display: flex !important;
+    flex-direction: column !important;
+}
+/* 사이드바 최상단 요소(Streamlit app 링크)를 하단으로 이동 */
+section[data-testid="stSidebar"] > div:first-child {
+    order: 999 !important;
+    margin-top: auto !important;
+    padding-top: 12px !important;
 }
 section[data-testid="stSidebar"] .stMarkdown {
     color: #495057;
@@ -75,9 +83,9 @@ section[data-testid="stSidebar"] .stMarkdown {
     color: #6c757d !important;
     font-size: 13px;
 }
-/* 버튼 = 로컬 search-btn / cert-type-btn.active */
+/* 버튼 = 가독성 좋은 파란 계열 (검은색 계열 대체) */
 [data-testid="stButton"] button {
-    background: #495057 !important;
+    background: #0d6efd !important;
     color: #fff !important;
     border: none !important;
     border-radius: 8px !important;
@@ -87,7 +95,7 @@ section[data-testid="stSidebar"] .stMarkdown {
     transition: background 0.2s;
 }
 [data-testid="stButton"] button:hover {
-    background: #343a40 !important;
+    background: #0b5ed7 !important;
     color: #fff !important;
 }
 /* 입력 필드 = 로컬 register-form input */
@@ -257,11 +265,11 @@ section[data-testid="stSidebar"] .stButton > button {
 }
 [data-testid="stRadio"] > div > label:has(input[type="radio"]:checked),
 [data-testid="stRadio"] > div > label:has(input[checked]) {
-    background: #495057 !important;
-    border-color: #495057 !important;
+    background: #0d6efd !important;
+    border-color: #0d6efd !important;
     color: #fff !important;
 }
-[data-testid="stRadio"] > div > label.tab-active { background: #495057 !important; border-color: #495057 !important; color: #fff !important; }
+[data-testid="stRadio"] > div > label.tab-active { background: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; }
 [data-testid="stRadio"] > div > label:hover { background: #f8f9fa !important; border-color: #adb5bd !important; }
 /* 접근성: 키보드 포커스 시 아웃라인 */
 [data-testid="stRadio"] > div > label:focus-visible,
@@ -288,12 +296,11 @@ section[data-testid="stSidebar"] .stButton > button {
 # 파일명: 2_현장_목록.py → URL: /2_현장_목록
 # NAV_LINKS의 path는 실제 파일명(확장자 제외)과 일치해야 함
 NAV_LINKS = [
-    ('🏠 대시보드', '1_dashboard'),  # 1_dashboard.py 또는 1_대시보드.py
-    ('📋 현장 목록', '2_현장_목록'),  # 2_현장_목록.py
-    ('➕ 현장등록', '3_현장등록'),  # 3_현장등록.py
-    ('📜 자격증등록', '4_자격증등록'),  # 4_자격증등록.py
-    ('👥 투입가능인원 상세', '8_투입가능인원_상세'),  # 8_투입가능인원_상세.py
-    ('🖥️ Streamlit App', '9_streamlit_app'),  # 9_streamlit_app.py
+    ('대시보드', '1_대시보드'),
+    ('현장 목록', '2_현장_목록'),
+    ('현장등록', '3_현장등록'),
+    ('자격증등록', '4_자격증등록'),
+    ('투입가능인원 상세', '8_투입가능인원_상세'),
 ]
 
 
@@ -333,7 +340,7 @@ def render_top_nav(current_page=None):
     # #endregion
     
     home_class = "active" if current_page is None else ""
-    parts = [f'<a href="/" class="{home_class}">🏗️ 홈</a>']
+    parts = [f'<a href="/" class="{home_class}">홈</a>']
     for label, path in NAV_LINKS:
         link_class = "active" if current_page == path else ""
         parts.append(f'<a href="/{path}" class="{link_class}">{label}</a>')

@@ -9,16 +9,15 @@ from streamlit_utils.api_client import (
     get_certificates,
     check_api_connection,
 )
-from streamlit_utils.theme import apply_localhost_theme, render_top_nav
+from streamlit_utils.theme import apply_localhost_theme
 
 apply_localhost_theme()
-render_top_nav(current_page="8_personnel_detail")
-st.title('👥 투입가능 인원')
+st.title('투입가능 인원')
 
 is_connected, error_msg = check_api_connection()
 if not is_connected:
     st.error(f'API 연결 실패: {error_msg}')
-    st.info('💡 Flask 서버를 먼저 실행하세요: `python run_api.py`')
+    st.info('Flask 서버를 먼저 실행하세요: `python run_api.py`')
     st.stop()
 
 # 탭: 전체 인원 / 투입가능 인원
@@ -59,7 +58,7 @@ with tab1:
     
     # 인원별 상세 정보 표시
     for person in filtered_personnel:
-        with st.expander(f"👤 {person.get('성명', '-')} ({person.get('인력ID', '-')}) - {person.get('직책', '-')}", expanded=False):
+        with st.expander(f"{person.get('성명', '-')} ({person.get('인력ID', '-')}) - {person.get('직책', '-')}", expanded=False):
             col_info, col_certs = st.columns([1, 1])
             
             with col_info:
@@ -138,7 +137,7 @@ with tab2:
     
     # 인원별 상세 정보 표시
     for person in filtered_personnel:
-        with st.expander(f"👤 {person.get('성명', '-')} ({person.get('인력ID', '-')}) - {person.get('직책', '-')}", expanded=False):
+        with st.expander(f"{person.get('성명', '-')} ({person.get('인력ID', '-')}) - {person.get('직책', '-')}", expanded=False):
             col_info, col_certs = st.columns([1, 1])
             
             with col_info:

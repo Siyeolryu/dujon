@@ -62,6 +62,7 @@ body {
 }
 .tab-btn {
     padding: 14px 20px;
+    min-height: 48px;
     border: none;
     background: transparent;
     font-size: 14px;
@@ -69,15 +70,21 @@ body {
     color: #6c757d;
     cursor: pointer;
     border-bottom: 3px solid transparent;
-    transition: color 0.2s, border-color 0.2s;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 .tab-btn:hover {
     color: #495057;
+    background: #f8f9fa;
 }
 .tab-btn.active {
     color: #1a1d21;
     border-bottom-color: #495057;
 }
+.tab-btn:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px #495057;
+}
+.tab-btn:active { background: #e9ecef; }
 .tab-panel {
     display: none;
 }
@@ -130,10 +137,24 @@ body {
 .register-form .form-group select,
 .register-form .form-group textarea {
     padding: 10px 12px;
+    min-height: 42px;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     font-size: 14px;
     background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.register-form .form-group input::placeholder,
+.register-form .form-group textarea::placeholder { color: #adb5bd; }
+.register-form .form-group input:hover,
+.register-form .form-group select:hover,
+.register-form .form-group textarea:hover { border-color: #adb5bd; }
+.register-form .form-group input:focus,
+.register-form .form-group select:focus,
+.register-form .form-group textarea:focus {
+    outline: none;
+    border-color: #495057;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.15);
 }
 .register-form .form-group textarea {
     resize: vertical;
@@ -145,6 +166,11 @@ body {
     margin-top: 24px;
     padding-top: 20px;
     border-top: 1px solid #e9ecef;
+    flex-wrap: wrap;
+}
+.register-form .form-actions .action-btn {
+    min-height: 44px;
+    padding: 12px 20px;
 }
 @media (max-width: 767px) {
     .register-form .form-grid {
@@ -167,6 +193,7 @@ body {
 }
 .cert-type-btn {
     padding: 10px 16px;
+    min-height: 42px;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     background: #fff;
@@ -174,11 +201,16 @@ body {
     font-weight: 500;
     color: #495057;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.2s, border-color 0.2s, transform 0.05s ease;
 }
 .cert-type-btn:hover {
     background: #f8f9fa;
     border-color: #adb5bd;
+}
+.cert-type-btn:active { transform: scale(0.98); }
+.cert-type-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.2);
 }
 .cert-type-btn.active {
     background: #495057;
@@ -396,49 +428,91 @@ body {
     color: #6c757d;
     font-weight: 500;
 }
+.filter-group.search-group {
+    position: relative;
+}
+.search-group input {
+    width: 100%;
+    min-width: 160px;
+    max-width: 220px;
+}
+@media (max-width: 600px) {
+    .filter-section { padding: 12px 16px; gap: 12px; }
+    .search-group { flex: 1 1 100%; }
+    .search-group input { width: 100%; max-width: none; }
+}
 .filter-select {
-    padding: 8px 12px;
+    padding: 10px 12px;
+    min-height: 42px;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     font-size: 14px;
     min-width: 120px;
     background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.filter-select:hover { border-color: #adb5bd; }
+.filter-select:focus {
+    outline: none;
+    border-color: #495057;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.15);
 }
 .search-group {
     display: flex;
     gap: 8px;
-    align-items: flex-end;
+    align-items: stretch;
 }
 .search-group input {
-    padding: 8px 12px;
+    padding: 10px 12px;
+    min-height: 42px;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     font-size: 14px;
     width: 200px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.search-group input::placeholder { color: #adb5bd; }
+.search-group input:hover { border-color: #adb5bd; }
+.search-group input:focus {
+    outline: none;
+    border-color: #495057;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.15);
 }
 .search-btn {
-    padding: 8px 14px;
+    padding: 10px 18px;
+    min-height: 42px;
     background: #495057;
     color: #fff;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s ease, transform 0.05s ease;
 }
-.search-btn:hover {
-    background: #343a40;
+.search-btn:hover { background: #343a40; }
+.search-btn:active { transform: scale(0.98); }
+.search-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.4);
 }
 .reset-btn {
-    padding: 8px 16px;
+    padding: 10px 18px;
+    min-height: 42px;
     background: #e9ecef;
     color: #495057;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s ease, transform 0.05s ease;
 }
-.reset-btn:hover {
-    background: #dee2e6;
+.reset-btn:hover { background: #dee2e6; }
+.reset-btn:active { transform: scale(0.98); }
+.reset-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.25);
 }
 
 /* ----- 메인 콘텐츠 ----- */
@@ -526,8 +600,26 @@ body {
 .site-table tbody tr:hover {
     background: #f8f9fa;
 }
+.site-table tbody tr:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px #495057;
+}
 .site-table tbody tr.selected {
     background: #e7f1ff;
+}
+.list-header select#sortBy {
+    padding: 8px 12px;
+    min-height: 38px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.list-header select#sortBy:focus {
+    outline: none;
+    border-color: #495057;
+    box-shadow: 0 0 0 2px rgba(73, 80, 87, 0.15);
 }
 .site-table tbody tr.unassigned-row {
     background: #fffbfc;
@@ -567,17 +659,25 @@ body {
     padding: 8px 12px;
 }
 .assign-inline-btn {
-    padding: 6px 12px;
+    padding: 8px 14px;
+    min-height: 36px;
     background: #495057;
     color: #fff;
     border: none;
     border-radius: 6px;
     font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
+    transition: background 0.2s ease, transform 0.05s ease;
 }
 .assign-inline-btn:hover {
     background: #343a40;
+}
+.assign-inline-btn:active { transform: scale(0.98); }
+.assign-inline-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(73, 80, 87, 0.5);
 }
 
 /* 카드 레이아웃 폴백 (모바일에서 테이블 대신) */
@@ -695,42 +795,60 @@ body {
     gap: 10px;
     margin-top: 16px;
 }
+.action-btn {
+    transition: background 0.2s ease, transform 0.05s ease, box-shadow 0.2s ease;
+}
+.action-btn:active:not(:disabled) { transform: scale(0.98); }
 .action-btn.primary {
     background: #495057;
     color: #fff;
-    padding: 12px;
+    padding: 12px 20px;
     border: none;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
 }
-.action-btn.primary:hover {
+.action-btn.primary:hover:not(:disabled) {
     background: #343a40;
+}
+.action-btn.primary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.4);
 }
 .action-btn.danger {
     background: #f5c6cb;
     color: #721c24;
-    padding: 12px;
+    padding: 12px 20px;
     border: none;
     border-radius: 8px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
 }
-.action-btn.danger:hover {
+.action-btn.danger:hover:not(:disabled) {
     background: #f1aeb5;
+}
+.action-btn.danger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(200, 35, 45, 0.35);
 }
 .action-btn.secondary {
     background: #e9ecef;
     color: #495057;
-    padding: 12px;
+    padding: 12px 20px;
     border: none;
     border-radius: 8px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
 }
-.action-btn.secondary:hover {
+.action-btn.secondary:hover:not(:disabled) {
     background: #dee2e6;
+}
+.action-btn.secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.25);
 }
 
 .close-btn {
@@ -739,16 +857,23 @@ body {
     font-size: 20px;
     cursor: pointer;
     color: #6c757d;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
 }
 .close-btn:hover {
     color: #1a1d21;
     background: #f1f3f5;
+}
+.close-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #495057;
 }
 
 /* ----- 반응형: 태블릿/모바일 ----- */

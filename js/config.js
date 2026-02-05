@@ -33,7 +33,10 @@ const CONFIG = {
 
     // 지도 초기 설정
     MAP_CENTER: { lat: 37.0, lng: 127.0 },  // 경기도 중심
-    MAP_ZOOM: 3  // 1~14, 작을수록 확대
+    MAP_ZOOM: 3,  // 1~14, 작을수록 확대
+
+    // 개발 시에만 콘솔 로그 출력 (localhost일 때 true)
+    DEBUG: typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 };
 
 // === 프론트 표시용 매핑 ===
