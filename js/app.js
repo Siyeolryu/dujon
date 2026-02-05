@@ -116,7 +116,6 @@ const App = {
         if (!healthy) {
             UI.showToast('API 서버에 연결할 수 없습니다. 서버를 확인하세요.', 'error');
         }
-        SiteMap.init('mapContainer');
         Filter.init();
         if (typeof Tabs !== 'undefined') Tabs.init();
         this.bindEvents();
@@ -145,7 +144,6 @@ const App = {
         if (filters.state && filters.state !== 'all') params.state = filters.state;
         const result = await DataAPI.getSites(params);
         if (result) {
-            SiteMap.updateMarkers(result.data);
             this.renderSiteList(result.data);
             const countEl = document.getElementById('siteCount');
             if (countEl) countEl.textContent = result.count;

@@ -42,7 +42,45 @@ const Dashboard = {
             else cardEl.classList.remove('highlight-warning');
         }
         this.renderChart(sites.assigned ?? 0, sites.unassigned ?? 0, sites.total ?? 0);
+        this.renderSummaryStrip(sites.by_company || {}, sites.by_state || {});
         this.initTabs();
+    },
+
+    /** 회사별·현장상태별 요약 스트립 (전체 현황 한눈에) */
+    renderSummaryStrip(byCompany, byState) {
+        const el = document.getElementById('summaryStrip');
+        if (!el) return;
+        const companyLabels = { '더존종합건설': '종합건설', '더존하우징': '하우징' };
+        let companyHtml = '';
+        for (const [k, v] of Object.entries(byCompany)) {
+            if (v === 0) continue;
+            companyHtml += `<span class="summary-item">${companyLabels[k] || k} <span>${v}건</span></span>`;
+        }
+        let stateHtml = '';
+        const stateOrder = ['건축허가', '착공예정', '공사 중', '공사 중단', '준공'];
+        for (const s of stateOrder) {
+            const v = byState[s];
+            if (!v) continue;
+            stateHtml += `<span class="summary-item">${s} <span>${v}건</span></span>`;
+        }
+        for (const [k, v] of Object.entries(byState)) {
+            if (stateOrder.includes(k) || v === 0) continue;
+            stateHtml += `<span class="summary-item">${k} <span>${v}건</span></span>`;
+        }
+        el.innerHTML = '';
+        if (companyHtml) {
+            const g = document.createElement('div');
+            g.className = 'summary-group';
+            g.innerHTML = '<strong>회사별</strong>' + companyHtml;
+            el.appendChild(g);
+        }
+        if (stateHtml) {
+            const g = document.createElement('div');
+            g.className = 'summary-group';
+            g.innerHTML = '<strong>현장상태별</strong>' + stateHtml;
+            el.appendChild(g);
+        }
+        if (!el.innerHTML) el.innerHTML = '<span class="summary-item">요약 데이터 없음</span>';
     },
 
     initTabs() {
@@ -196,6 +234,6 @@ const Dashboard = {
     openPersonnelDetailPage() {
         // 새 탭으로 투입가능 인원 상세 페이지 열기 (Streamlit 또는 별도 HTML)
         // 현재는 필터만 적용하도록 유지 (추후 별도 페이지 구현 시 수정)
-        window.open('/pages/8_투입가능인원_상세', '_blank');
+        window.open('/pages/8_personnel_detail', '_blank');
     },
 };
