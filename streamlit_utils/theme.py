@@ -280,24 +280,6 @@ section[data-testid="stSidebar"] .stButton > button {
     .top-nav a { text-align: center; }
     [data-testid="column"] { min-width: 0 !important; }
 }
-/* 사이드바 완전 숨김 (사용 안 함) */
-section[data-testid="stSidebar"],
-[data-testid="stSidebar"] {
-    display: none !important;
-}
-/* 메인 영역 전체 너비 사용 */
-[data-testid="stAppViewContainer"] main .block-container {
-    max-width: 100% !important;
-    padding-left: 24px !important;
-    padding-right: 24px !important;
-}
-/* 사이드바 토글 버튼 숨김 */
-button[kind="header"] {
-    display: none !important;
-}
-[data-testid="collapsedControl"] {
-    display: none !important;
-}
 </style>
 """
 

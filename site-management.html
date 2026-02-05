@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/assign-panel.css">
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=797d955e0a50c6f827d5bfe3ab6ee26e&autoload=false"></script>
 </head>
 <body>
     <header class="app-header">
@@ -27,29 +26,35 @@
     </nav>
 
     <div id="tab-site-list" class="tab-panel active" role="tabpanel">
-    <section id="dashboard" class="dashboard-section">
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card stat-tab" id="statTotalSites" data-filter-type="reset" data-filter-value="all" role="button" tabindex="0" aria-label="전체 현장 보기">
-                <div class="stat-number skeleton-number" data-skeleton>-</div>
-                <div class="stat-label">전체 현장</div>
+    <section id="dashboard" class="dashboard-section" aria-label="전체 현황">
+        <h2 class="dashboard-title">📊 전체 현황</h2>
+        <div class="dashboard-overview">
+            <div>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card stat-tab" id="statTotalSites" data-filter-type="reset" data-filter-value="all" role="button" tabindex="0" aria-label="전체 현장 보기">
+                        <div class="stat-number skeleton-number" data-skeleton>-</div>
+                        <div class="stat-label">전체 현장</div>
+                    </div>
+                    <div class="stat-card stat-danger stat-tab" id="statUnassigned" data-filter-type="status" data-filter-value="미배정" role="button" tabindex="0" aria-label="미배정 현장 보기">
+                        <div class="stat-number skeleton-number" data-skeleton>-</div>
+                        <div class="stat-label">미배정 현장</div>
+                    </div>
+                    <div class="stat-card stat-success stat-tab" id="statAssigned" data-filter-type="status" data-filter-value="배정완료" role="button" tabindex="0" aria-label="배정완료 현장 보기">
+                        <div class="stat-number skeleton-number" data-skeleton>-</div>
+                        <div class="stat-label">배정완료</div>
+                    </div>
+                    <div class="stat-card stat-info stat-tab" id="statAvailablePersonnel" data-filter-type="personnel" data-filter-value="all" role="button" tabindex="0" aria-label="투입가능 인원 현황">
+                        <div class="stat-number skeleton-number" data-skeleton>-</div>
+                        <div class="stat-label">투입가능 인원</div>
+                        <div class="stat-sub-label skeleton-sub" data-skeleton style="font-size: 11px; color: #6c757d; margin-top: 4px;">전체 - / 투입가능 -</div>
+                    </div>
+                </div>
+                <div id="summaryStrip" class="summary-strip" aria-label="회사별·현장상태별 요약"></div>
             </div>
-            <div class="stat-card stat-danger stat-tab" id="statUnassigned" data-filter-type="status" data-filter-value="미배정" role="button" tabindex="0" aria-label="미배정 현장 보기">
-                <div class="stat-number skeleton-number" data-skeleton>-</div>
-                <div class="stat-label">미배정 현장</div>
+            <div class="chart-section" id="chartSection">
+                <h4>배정 현황</h4>
+                <div class="chart-svg-wrap" id="chartSvgWrap" aria-hidden="true"></div>
             </div>
-            <div class="stat-card stat-success stat-tab" id="statAssigned" data-filter-type="status" data-filter-value="배정완료" role="button" tabindex="0" aria-label="배정완료 현장 보기">
-                <div class="stat-number skeleton-number" data-skeleton>-</div>
-                <div class="stat-label">배정완료</div>
-            </div>
-            <div class="stat-card stat-info stat-tab" id="statAvailablePersonnel" data-filter-type="personnel" data-filter-value="all" role="button" tabindex="0" aria-label="투입가능 인원 현황">
-                <div class="stat-number skeleton-number" data-skeleton>-</div>
-                <div class="stat-label">투입가능 인원</div>
-                <div class="stat-sub-label skeleton-sub" data-skeleton style="font-size: 11px; color: #6c757d; margin-top: 4px;">전체 - / 투입가능 -</div>
-            </div>
-        </div>
-        <div class="chart-section" id="chartSection">
-            <h4>배정 현황</h4>
-            <div class="chart-svg-wrap" id="chartSvgWrap" aria-hidden="true"></div>
         </div>
     </section>
 
@@ -90,7 +95,6 @@
 
     <main class="main-content">
         <div class="content-layout">
-            <div id="mapContainer" class="map-area"></div>
             <section id="siteList" class="site-list-section">
                 <div class="list-header">
                     <h3>현장 목록 <span id="siteCount" class="count-badge">0</span></h3>
@@ -506,7 +510,6 @@
     <script src="js/api.js"></script>
     <script src="js/supabase-api.js"></script>
     <script src="js/dashboard.js"></script>
-    <script src="js/map.js"></script>
     <script src="js/filter.js"></script>
     <script src="js/site-detail.js"></script>
     <script src="js/assign.js"></script>
