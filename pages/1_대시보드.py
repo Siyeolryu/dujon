@@ -50,7 +50,7 @@ def _normalize_stats(raw):
     }
 
 
-# 차트용 밝은 색상 (임원 가독성)
+# 차트용 색상 (바탕색 #F8F9FA와 조화, 임원 가독성 유지)
 CHART_COLORS_LIGHT = [
     "#e3f2fd",  # 연한 파랑
     "#e8f5e9",  # 연한 녹색
@@ -59,8 +59,10 @@ CHART_COLORS_LIGHT = [
     "#fce4ec",  # 연한 분홍
     "#f5f5f5",  # 연한 회색
 ]
-BAR_COLOR_PRIMARY = "#90caf9"
-BAR_COLOR_SECONDARY = "#a5d6a7"
+# 바탕색과 조화되는 차분한 톤
+BAR_COLOR_PRIMARY = "#5a9fd4"     # 차분한 블루 (배정완료, 현장상태)
+BAR_COLOR_SECONDARY = "#81c784"   # 차분한 녹색 (직책별 인원)
+BAR_COLOR_WARNING = "#ef9a9a"     # 차분한 레드 (미배정)
 
 
 # API 연결 상태
@@ -86,21 +88,70 @@ stats = _normalize_stats(raw_stats)
 if stats_err and is_connected:
     st.warning(f"통계 조회 실패: {stats_err}. 0으로 표시합니다.")
 
+# ----- 빠른 작업 버튼 섹션 -----
+st.markdown("### 빠른 작업")
+st.markdown('<div style="margin-bottom: 24px;"></div>', unsafe_allow_html=True)
+
+quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
+
+with quick_col1:
+    st.markdown("""
+    <div style="background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📋</div>
+        <div style="font-size: 14px; font-weight: 600; color: #1a1d21; margin-bottom: 4px;">현장 목록</div>
+        <div style="font-size: 12px; color: #6c757d;">전체 현장 조회 및 관리</div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("현장 목록 보기", key="btn_site_list", use_container_width=True):
+        st.switch_page("pages/2_현장_목록.py")
+
+with quick_col2:
+    st.markdown("""
+    <div style="background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">➕</div>
+        <div style="font-size: 14px; font-weight: 600; color: #1a1d21; margin-bottom: 4px;">현장 등록</div>
+        <div style="font-size: 12px; color: #6c757d;">새로운 현장 추가</div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("현장 등록하기", key="btn_site_register", use_container_width=True):
+        st.switch_page("pages/3_현장등록.py")
+
+with quick_col3:
+    st.markdown("""
+    <div style="background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🎓</div>
+        <div style="font-size: 14px; font-weight: 600; color: #1a1d21; margin-bottom: 4px;">자격증 등록</div>
+        <div style="font-size: 12px; color: #6c757d;">새로운 자격증 추가</div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("자격증 등록하기", key="btn_cert_register", use_container_width=True):
+        st.switch_page("pages/4_자격증등록.py")
+
+with quick_col4:
+    st.markdown("""
+    <div style="background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">👥</div>
+        <div style="font-size: 14px; font-weight: 600; color: #1a1d21; margin-bottom: 4px;">투입가능인원</div>
+        <div style="font-size: 12px; color: #6c757d;">인력 현황 상세 조회</div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("인원 조회하기", key="btn_personnel", use_container_width=True):
+        st.switch_page("pages/8_투입가능인원_상세.py")
+
+st.markdown('<div style="margin: 32px 0; border-top: 2px solid #e9ecef;"></div>', unsafe_allow_html=True)
+
 # ----- 상단 KPI (한 줄 4~6개) -----
 st.markdown("### 현황 요약")
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     st.metric(label="전체 현장", value=stats["total_sites"])
-    st.markdown("[현장 목록](/현장_목록)")
 
 with col2:
-    st.metric(label="미배정", value=stats["unassigned"])
-    st.markdown("[미배정 보기](/현장_목록?status=미배정)")
+    st.metric(label="미배정", value=stats["unassigned"], delta=f"-{stats['unassigned']}" if stats['unassigned'] > 0 else None, delta_color="inverse")
 
 with col3:
-    st.metric(label="배정완료", value=stats["assigned"])
-    st.markdown("[배정완료 보기](/현장_목록?status=배정완료)")
+    st.metric(label="배정완료", value=stats["assigned"], delta=f"+{stats['assigned']}" if stats['assigned'] > 0 else None)
 
 with col4:
     st.metric(
@@ -108,7 +159,6 @@ with col4:
         value=f"{stats['available_personnel']} / {stats['total_personnel']}",
         delta=None,
     )
-    st.caption(f"전체 {stats['total_personnel']}명, 투입가능 {stats['available_personnel']}명")
 
 with col5:
     st.metric(label="사용가능 자격증", value=stats["available_certificates"])
@@ -116,11 +166,13 @@ with col5:
 with col6:
     st.metric(label="전체 자격증", value=stats["total_certificates"])
 
+st.markdown('<div style="margin: 32px 0; border-top: 2px solid #e9ecef;"></div>', unsafe_allow_html=True)
+
 # ----- 2단: 좌 현장 현황 / 우 인력·자격증 -----
 left_col, right_col = st.columns(2)
 
 with left_col:
-    st.markdown("#### 배정 현황")
+    st.markdown("#### 📊 배정 현황")
     total = stats["total_sites"]
     assigned = stats["assigned"]
     unassigned = stats["unassigned"]
@@ -137,7 +189,7 @@ with left_col:
                         name="배정완료",
                         x=["배정완료"],
                         y=[assigned],
-                        marker_color="#a5d6a7",
+                        marker_color=BAR_COLOR_SECONDARY,
                         text=[assigned],
                         textposition="outside",
                     ),
@@ -145,7 +197,7 @@ with left_col:
                         name="미배정",
                         x=["미배정"],
                         y=[unassigned],
-                        marker_color="#ef9a9a",
+                        marker_color=BAR_COLOR_WARNING,
                         text=[unassigned],
                         textposition="outside",
                     ),
@@ -167,7 +219,8 @@ with left_col:
         except Exception as e:
             st.warning(f"차트를 그리지 못했습니다: {e}")
 
-    st.markdown("#### 현장상태별 현황")
+    st.markdown('<div style="margin: 24px 0;"></div>', unsafe_allow_html=True)
+    st.markdown("#### 🏗️ 현장상태별 현황")
     by_state = {}
     if raw_stats and isinstance(raw_stats, dict) and "sites" in raw_stats:
         by_state = (raw_stats.get("sites") or {}).get("by_state") or {}
@@ -208,14 +261,14 @@ with left_col:
             st.warning(f"현장상태 차트 오류: {e}")
 
 with right_col:
-    st.markdown("#### 인력 현황")
+    st.markdown("#### 👥 인력 현황")
     st.metric(
         label="전체 / 투입가능 / 투입중",
         value=f"{stats['total_personnel']} / {stats['available_personnel']} / {stats.get('deployed_personnel', 0)}",
     )
-    st.markdown("[투입가능인원 상세](/투입가능인원_상세)")
 
-    st.markdown("#### 직책별 인원")
+    st.markdown('<div style="margin: 24px 0;"></div>', unsafe_allow_html=True)
+    st.markdown("#### 👔 직책별 인원")
     by_role = {}
     if raw_stats and isinstance(raw_stats, dict) and "personnel" in raw_stats:
         by_role = (raw_stats.get("personnel") or {}).get("by_role") or {}
@@ -252,7 +305,8 @@ with right_col:
         except Exception as e:
             st.warning(f"직책별 차트 오류: {e}")
 
-    st.markdown("#### 자격증 요약")
+    st.markdown('<div style="margin: 24px 0;"></div>', unsafe_allow_html=True)
+    st.markdown("#### 🎓 자격증 요약")
     st.caption(f"사용가능 {stats['available_certificates']} / 전체 {stats['total_certificates']}")
 
 # 미배정 5건 이상 시 강조

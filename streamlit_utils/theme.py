@@ -83,20 +83,21 @@ section[data-testid="stSidebar"] .stMarkdown {
     color: #6c757d !important;
     font-size: 13px;
 }
-/* 버튼 = 가독성 좋은 파란 계열 (검은색 계열 대체) */
+/* 버튼 = 바탕색과 조화되는 통일된 색상 체계 */
 [data-testid="stButton"] button {
-    background: #0d6efd !important;
-    color: #fff !important;
-    border: none !important;
+    background: #e9ecef !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
     border-radius: 8px !important;
     padding: 10px 16px !important;
     font-weight: 500 !important;
     font-size: 14px !important;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
 }
 [data-testid="stButton"] button:hover {
-    background: #0b5ed7 !important;
-    color: #fff !important;
+    background: #dee2e6 !important;
+    color: #1a1d21 !important;
+    border-color: #ced4da !important;
 }
 /* 입력 필드 = 로컬 register-form input */
 [data-testid="stTextInput"] input,
@@ -159,21 +160,24 @@ section[data-testid="stSidebar"] .stMarkdown {
 hr {
     border-color: #e9ecef !important;
 }
-/* CTA(주요 액션): 등록·배정·저장 = Primary 파란 */
+/* CTA(주요 액션): 등록·배정·저장 = 바탕색과 조화되는 Primary (차분한 블루) */
 [data-testid="stFormSubmitButton"] button,
 [data-testid="stButton"] button[kind="primary"] {
-    background: #3b82f6 !important;
+    background: #0d6efd !important;
     color: #fff !important;
+    border: none !important;
     border-radius: 8px !important;
     padding: 10px 24px !important;
     font-weight: 500 !important;
     font-size: 14px !important;
     min-width: 120px !important;
+    transition: all 0.2s ease;
 }
 [data-testid="stFormSubmitButton"] button:hover,
 [data-testid="stButton"] button[kind="primary"]:hover {
-    background: #2563eb !important;
+    background: #0b5ed7 !important;
     color: #fff !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3) !important;
 }
 /* 폼 컨테이너 + 공통 폼/탭 클래스 (페이지 인라인 중복 제거) */
 [data-testid="stForm"] {
