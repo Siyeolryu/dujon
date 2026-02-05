@@ -23,7 +23,7 @@ def _detect_environment():
         # Streamlit Cloud에서는 특정 옵션이 설정됨
         if hasattr(st, 'config') and st.config.get_option('server.headless'):
             return 'streamlit_cloud'
-    except:
+    except Exception:
         pass
     # 로컬 개발 환경
     return 'local'
@@ -95,24 +95,44 @@ def _check(res, allow_404=False):
 # --- Stats ---
 def get_stats():
     """GET /api/stats 또는 Supabase 직접 통계 계산"""
-    # Supabase 직접 연결 모드일 때
+    # Supabase 직접 연결 모드일 때 (Flask API와 동일한 구조로 반환)
     if _api_mode == 'supabase' and _supabase_service:
         try:
             sites = _supabase_service.get_all_sites()
             personnel = _supabase_service.get_all_personnel()
             certificates = _supabase_service.get_all_certificates()
-            
-            # 통계 계산
-            stats = {
-                'total_sites': len(sites),
-                'assigned_sites': len([s for s in sites if s.get('배정상태') == '배정완료']),
-                'unassigned_sites': len([s for s in sites if s.get('배정상태') == '미배정']),
-                'total_personnel': len(personnel),
-                'available_personnel': len([p for p in personnel if p.get('현재상태') == '투입가능']),
-                'total_certificates': len(certificates),
-                'available_certificates': len([c for c in certificates if c.get('사용가능여부') == '사용가능']),
+
+            by_state = {}
+            for s in sites:
+                st = s.get('현장상태') or ''
+                by_state[st] = by_state.get(st, 0) + 1
+
+            by_role = {}
+            for p in personnel:
+                role = p.get('직책') or ''
+                by_role[role] = by_role.get(role, 0) + 1
+
+            data = {
+                'sites': {
+                    'total': len(sites),
+                    'assigned': len([s for s in sites if s.get('배정상태') == '배정완료']),
+                    'unassigned': len([s for s in sites if s.get('배정상태') == '미배정']),
+                    'by_state': by_state,
+                },
+                'personnel': {
+                    'total': len(personnel),
+                    'available': len([p for p in personnel if p.get('현재상태') == '투입가능']),
+                    'deployed': len([p for p in personnel if p.get('현재상태') == '투입중']),
+                    'by_role': by_role,
+                },
+                'certificates': {
+                    'total': len(certificates),
+                    'available': len([c for c in certificates if c.get('사용가능여부') == '사용가능']),
+                    'in_use': len([c for c in certificates if c.get('사용가능여부') == '사용중']),
+                    'expired': len([c for c in certificates if c.get('사용가능여부') == '만료']),
+                },
             }
-            return stats, None
+            return data, None
         except Exception as e:
             return None, f"Supabase 통계 계산 실패: {str(e)}"
     
@@ -362,7 +382,7 @@ def check_api_connection():
             r = requests.get(_url('/api/health'), timeout=3)
             if r.status_code == 200:
                 return True, None
-        except:
+        except Exception:
             # 배포 환경에서는 조용히 실패 처리
             return False, "API 서버 연결 실패 (배포 환경에서는 별도 API 서버 필요)"
     

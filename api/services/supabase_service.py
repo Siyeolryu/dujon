@@ -203,7 +203,7 @@ class SupabaseService:
                     query = query.range(offset, offset + limit - 1)
                 r = query.execute()
                 return [_transform_site(row) for row in (r.data or [])]
-            except:
+            except Exception:
                 raise e
 
     def get_sites_paginated(self, company=None, status=None, state=None, limit=None, offset=0) -> Dict:
@@ -335,7 +335,7 @@ class SupabaseService:
                 r = client.table(TABLE_SITES).select("*").or_(f"legacy_id.eq.{site_id},id.eq.{site_id}").limit(1).execute()
                 rows = r.data or []
                 return _transform_site(rows[0]) if rows else None
-            except:
+            except Exception:
                 raise e
 
     def get_all_personnel(self) -> List[Dict]:
@@ -359,7 +359,7 @@ class SupabaseService:
             try:
                 r = client.table(TABLE_PERSONNEL).select("*").order("created_at", desc=True).execute()
                 return [_transform_personnel(row) for row in (r.data or [])]
-            except:
+            except Exception:
                 raise e
 
     def get_personnel_by_id(self, personnel_id: str) -> Optional[Dict]:
@@ -385,7 +385,7 @@ class SupabaseService:
                 r = client.table(TABLE_PERSONNEL).select("*").or_(f"legacy_id.eq.{personnel_id},id.eq.{personnel_id}").limit(1).execute()
                 rows = r.data or []
                 return _transform_personnel(rows[0]) if rows else None
-            except:
+            except Exception:
                 raise e
 
     def get_all_certificates(self) -> List[Dict]:
@@ -414,7 +414,7 @@ class SupabaseService:
             try:
                 r = client.table(TABLE_CERTIFICATES).select("*").order("created_at", desc=True).execute()
                 return [_transform_certificate(row) for row in (r.data or [])]
-            except:
+            except Exception:
                 raise e
 
     def get_certificate_by_id(self, cert_id: str) -> Optional[Dict]:
@@ -445,7 +445,7 @@ class SupabaseService:
                 r = client.table(TABLE_CERTIFICATES).select("*").or_(f"legacy_id.eq.{cert_id},id.eq.{cert_id}").limit(1).execute()
                 rows = r.data or []
                 return _transform_certificate(rows[0]) if rows else None
-            except:
+            except Exception:
                 raise e
 
     # ---- 쓰기: 정규화된 스키마 사용 ----
@@ -461,7 +461,7 @@ class SupabaseService:
                 company_r = client.table(TABLE_COMPANIES).select("id").or_(f"name.eq.{company_name},short_name.eq.{company_name}").limit(1).execute()
                 if company_r.data:
                     company_id = company_r.data[0]["id"]
-            except:
+            except Exception:
                 pass
         
         # 정규화된 스키마 형식으로 변환
@@ -498,7 +498,7 @@ class SupabaseService:
                 company_r = client.table(TABLE_COMPANIES).select("id").or_(f"name.eq.{company_name},short_name.eq.{company_name}").limit(1).execute()
                 if company_r.data:
                     payload["company_id"] = company_r.data[0]["id"]
-            except:
+            except Exception:
                 pass
         
         # 필드 매핑
@@ -541,7 +541,7 @@ class SupabaseService:
                 company_r = client.table(TABLE_COMPANIES).select("id").or_(f"name.eq.{company_name},short_name.eq.{company_name}").limit(1).execute()
                 if company_r.data:
                     company_id = company_r.data[0]["id"]
-            except:
+            except Exception:
                 pass
         
         payload = {
@@ -573,7 +573,7 @@ class SupabaseService:
                 company_r = client.table(TABLE_COMPANIES).select("id").or_(f"name.eq.{company_name},short_name.eq.{company_name}").limit(1).execute()
                 if company_r.data:
                     payload["company_id"] = company_r.data[0]["id"]
-            except:
+            except Exception:
                 pass
         
         field_map = {
@@ -610,7 +610,7 @@ class SupabaseService:
                 cert_type_r = client.table(TABLE_CERTIFICATE_TYPES).select("id").eq("name", cert_type_name).limit(1).execute()
                 if cert_type_r.data:
                     cert_type_id = cert_type_r.data[0]["id"]
-            except:
+            except Exception:
                 pass
         
         # 소유자 ID 조회
@@ -621,7 +621,7 @@ class SupabaseService:
                 personnel_r = client.table(TABLE_PERSONNEL).select("id").eq("name", owner_name).limit(1).execute()
                 if personnel_r.data:
                     personnel_id = personnel_r.data[0]["id"]
-            except:
+            except Exception:
                 pass
         
         payload = {
@@ -651,7 +651,7 @@ class SupabaseService:
                 cert_type_r = client.table(TABLE_CERTIFICATE_TYPES).select("id").eq("name", cert_type_name).limit(1).execute()
                 if cert_type_r.data:
                     payload["cert_type_id"] = cert_type_r.data[0]["id"]
-            except:
+            except Exception:
                 pass
         
         # 소유자 ID 조회
@@ -661,7 +661,7 @@ class SupabaseService:
                 personnel_r = client.table(TABLE_PERSONNEL).select("id").eq("name", owner_name).limit(1).execute()
                 if personnel_r.data:
                     payload["personnel_id"] = personnel_r.data[0]["id"]
-            except:
+            except Exception:
                 pass
         
         field_map = {

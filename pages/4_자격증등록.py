@@ -5,13 +5,12 @@ POST /api/certificates (자격증ID·소유자ID는 API에서 자동 부여). UI
 import streamlit as st
 import os
 from streamlit_utils.api_client import create_certificate, check_api_connection
-from streamlit_utils.theme import apply_localhost_theme, render_top_nav
+from streamlit_utils.theme import apply_localhost_theme
 
 apply_localhost_theme()
-render_top_nav(current_page="4_cert_register")
 
 # 페이지 제목 및 설명
-st.title('📜 자격증등록')
+st.title('자격증등록')
 st.caption('자격증ID는 자동으로 부여됩니다.')
 
 # API 연결 확인 (Supabase 모드일 때는 체크 건너뛰기)
@@ -20,7 +19,7 @@ if api_mode != 'supabase':
     is_connected, error_msg = check_api_connection()
     if not is_connected:
         st.error(f'API 연결 실패: {error_msg}')
-        st.info('💡 Flask 서버를 먼저 실행하세요: `python run_api.py`')
+        st.info('Flask 서버를 먼저 실행하세요: `python run_api.py`')
         st.stop()
 
 # 폼/탭 스타일 = streamlit_utils.theme 공통 적용 (인라인 제거)
@@ -131,6 +130,6 @@ if submitted:
             if data:
                 st.info(f"부여된 자격증ID: {data.get('자격증ID', '-')}, 소유자ID: {data.get('소유자ID', '-')}")
             st.caption('자격증 목록·투입가능인원에서 확인하세요.')
-            st.markdown('[📜 자격증 등록](/자격증등록) · [👥 투입가능인원 상세](/투입가능인원_상세)')
-            if st.button('➕ 다른 자격증 등록'):
+            st.markdown('[자격증 등록](/자격증등록) · [투입가능인원 상세](/투입가능인원_상세)')
+            if st.button('다른 자격증 등록'):
                 st.rerun()

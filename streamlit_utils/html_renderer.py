@@ -99,13 +99,13 @@ def render_html_app(html_file='site-management.html', height=800, key=None):
         )
     except FileNotFoundError as e:
         import streamlit as st
-        st.error(f"❌ HTML 파일을 찾을 수 없습니다: {html_file}")
+        st.error(f"HTML 파일을 찾을 수 없습니다: {html_file}")
         st.info(f"파일 경로를 확인하세요: {e}")
         return None
     except Exception as e:
         import streamlit as st
         import traceback
-        st.error(f"❌ HTML 렌더링 오류: {str(e)}")
+        st.error(f"HTML 렌더링 오류: {str(e)}")
         with st.expander("상세 오류 정보"):
             st.code(traceback.format_exc())
         return None

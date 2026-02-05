@@ -79,11 +79,23 @@
 .assign-panel .form-select {
     width: 100%;
     padding: 10px 12px;
+    min-height: 42px;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     font-size: 14px;
     margin-bottom: 8px;
     background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.assign-panel .form-select:hover { border-color: #adb5bd; }
+.assign-panel .form-select:focus {
+    outline: none;
+    border-color: #495057;
+    box-shadow: 0 0 0 3px rgba(73, 80, 87, 0.15);
+}
+.assign-actions .action-btn {
+    min-height: 44px;
+    padding: 12px 18px;
 }
 .preview-card {
     padding: 12px;

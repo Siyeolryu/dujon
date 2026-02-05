@@ -10,7 +10,7 @@
 </head>
 <body>
     <header class="app-header">
-        <h1>🏗️ 현장배정 관리 시스템</h1>
+        <h1>현장배정 관리 시스템</h1>
         <div class="header-actions">
             <span id="serverStatus" class="status-indicator">●</span>
             <span id="lastUpdated" class="last-updated">-</span>
@@ -27,7 +27,7 @@
 
     <div id="tab-site-list" class="tab-panel active" role="tabpanel">
     <section id="dashboard" class="dashboard-section" aria-label="전체 현황">
-        <h2 class="dashboard-title">📊 전체 현황</h2>
+        <h2 class="dashboard-title">전체 현황</h2>
         <div class="dashboard-overview">
             <div>
                 <div class="stats-grid" id="statsGrid">
@@ -87,10 +87,11 @@
             </select>
         </div>
         <div class="filter-group search-group">
-            <input type="text" id="searchInput" placeholder="현장명·주소 검색..." />
-            <button id="searchBtn" class="search-btn">🔍</button>
+            <label for="searchInput" class="visually-hidden">현장명·주소 검색</label>
+            <input type="search" id="searchInput" placeholder="현장명·주소 검색..." aria-label="현장명·주소 검색" autocomplete="off" />
+            <button type="button" id="searchBtn" class="search-btn">검색</button>
         </div>
-        <button id="resetFilter" class="reset-btn">초기화</button>
+        <button type="button" id="resetFilter" class="reset-btn">초기화</button>
     </section>
 
     <main class="main-content">
@@ -99,7 +100,8 @@
                 <div class="list-header">
                     <h3>현장 목록 <span id="siteCount" class="count-badge">0</span></h3>
                     <div class="sort-options">
-                        <select id="sortBy">
+                        <label for="sortBy" class="visually-hidden">정렬 기준</label>
+                        <select id="sortBy" aria-label="현장 목록 정렬 기준">
                             <option value="name">현장명순</option>
                             <option value="status">배정상태순</option>
                             <option value="state">현장상태순</option>
@@ -354,11 +356,11 @@
     <aside id="siteDetailPanel" class="detail-panel hidden">
         <div class="panel-header">
             <h3 id="detailSiteName">-</h3>
-            <button id="closeDetail" class="close-btn">✕</button>
+            <button type="button" id="closeDetail" class="close-btn" aria-label="패널 닫기">✕</button>
         </div>
         <div class="panel-body">
             <div class="detail-section">
-                <h4>📍 기본 정보</h4>
+                <h4>기본 정보</h4>
                 <dl class="detail-list">
                     <dt>현장ID</dt><dd id="detailSiteId">-</dd>
                     <dt>회사</dt><dd id="detailCompany">-</dd>
@@ -371,21 +373,21 @@
                 </dl>
             </div>
             <div class="detail-section">
-                <h4>👷 배정 정보</h4>
+                <h4>배정 정보</h4>
                 <div id="detailAssignInfo"></div>
             </div>
             <div class="detail-actions">
-                <button id="btnAssign" class="action-btn primary hidden">배정하기</button>
-                <button id="btnUnassign" class="action-btn danger hidden">배정 해제</button>
-                <button id="btnEditSite" class="action-btn secondary">정보 수정</button>
+                <button type="button" id="btnAssign" class="action-btn primary hidden">배정하기</button>
+                <button type="button" id="btnUnassign" class="action-btn danger hidden">배정 해제</button>
+                <button type="button" id="btnEditSite" class="action-btn secondary">정보 수정</button>
             </div>
         </div>
     </aside>
 
     <aside id="assignPanel" class="assign-panel hidden">
         <div class="panel-header">
-            <h3>👷 소장 배정</h3>
-            <button id="closeAssign" class="close-btn">✕</button>
+            <h3>소장 배정</h3>
+            <button type="button" id="closeAssign" class="close-btn" aria-label="배정 패널 닫기">✕</button>
         </div>
         <div class="panel-body">
             <div class="assign-target">
@@ -409,12 +411,12 @@
                 <div id="certPreview" class="preview-card hidden"></div>
             </div>
             <div class="assign-notice">
-                <p>💡 소장과 자격증을 모두 선택한 후 배정 확인을 눌러주세요.</p>
-                <p>⚠️ 자격증은 한 현장에만 사용할 수 있습니다.</p>
+                <p>소장과 자격증을 모두 선택한 후 배정 확인을 눌러주세요.</p>
+                <p>자격증은 한 현장에만 사용할 수 있습니다.</p>
             </div>
             <div class="assign-actions">
-                <button id="btnCancelAssign" class="action-btn secondary">취소</button>
-                <button id="btnConfirmAssign" class="action-btn primary" disabled>배정 확인</button>
+                <button type="button" id="btnCancelAssign" class="action-btn secondary">취소</button>
+                <button type="button" id="btnConfirmAssign" class="action-btn primary" disabled>배정 확인</button>
             </div>
         </div>
     </aside>
@@ -430,8 +432,8 @@
             <h3 id="modalTitle">-</h3>
             <div id="modalBody">-</div>
             <div class="modal-actions">
-                <button id="modalCancel" class="action-btn secondary">취소</button>
-                <button id="modalConfirm" class="action-btn primary">확인</button>
+                <button type="button" id="modalCancel" class="action-btn secondary">취소</button>
+                <button type="button" id="modalConfirm" class="action-btn primary">확인</button>
             </div>
         </div>
     </div>

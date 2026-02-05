@@ -79,8 +79,8 @@ def inline_css_and_js(html_content):
         else:
             print(f"⚠️ JS 파일을 찾을 수 없습니다: {full_path}")
     
-    # 처리 결과 로그 (디버깅용)
-    if css_files_processed or js_files_processed:
+    # 처리 결과 로그 (환경변수 DEBUG=1 일 때만)
+    if os.getenv('DEBUG', '').strip() in ('1', 'true', 'yes') and (css_files_processed or js_files_processed):
         print(f"✅ 인라인화 완료: CSS {len(css_files_processed)}개, JS {len(js_files_processed)}개")
     
     return html_content
@@ -126,11 +126,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flas
             window.CONFIG.SUPABASE_URL = '{supabase_url}';
             window.CONFIG.SUPABASE_ANON_KEY = '{supabase_anon_key}';
             
-            console.log('[Streamlit] Supabase 직접 연결 모드 설정 완료:', {{
-                API_MODE: window.CONFIG.API_MODE,
-                SUPABASE_URL: window.CONFIG.SUPABASE_URL
-            }});
-            
             // config.js 로드 후 CONFIG 객체 강제 업데이트
             setTimeout(function() {{
                 if (window.CONFIG) {{
@@ -139,7 +134,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flas
                         SUPABASE_URL: '{supabase_url}',
                         SUPABASE_ANON_KEY: '{supabase_anon_key}'
                     }});
-                    console.log('[Streamlit] CONFIG 강제 업데이트 완료 (Supabase 모드):', window.CONFIG);
                 }}
             }}, 100);
             
@@ -150,7 +144,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flas
                         window.CONFIG.API_MODE = 'supabase';
                         window.CONFIG.SUPABASE_URL = '{supabase_url}';
                         window.CONFIG.SUPABASE_ANON_KEY = '{supabase_anon_key}';
-                        console.log('[Streamlit] DOMContentLoaded 후 CONFIG 재설정 (Supabase 모드):', window.CONFIG);
                     }}
                 }});
             }}
@@ -172,7 +165,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flas
             // 로컬호스트인 경우 그대로 사용
             if (apiUrl.startsWith('http://localhost') || apiUrl.startsWith('http://127.0.0.1')) {{
                 // 이미 절대 URL이므로 그대로 사용
-                console.log('[Streamlit] API URL 설정:', apiUrl);
             }} else if (apiUrl.startsWith('/')) {{
                 // 상대 경로인 경우 현재 페이지의 프로토콜과 호스트 사용
                 // Streamlit iframe 내부에서는 부모 창의 origin 사용 시도
@@ -196,7 +188,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flas
                         apiUrl = window.location.origin + apiUrl;
                     }}
                 }}
-                console.log('[Streamlit] API URL 변환:', apiUrl);
             }}
             
             // 전역 변수 설정 (config.js보다 먼저)
@@ -210,11 +201,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flas
             window.CONFIG.API_MODE = 'flask';
             window.CONFIG.API_BASE_URL = apiUrl;
             
-            console.log('[Streamlit] CONFIG 설정 완료:', {{
-                API_MODE: window.CONFIG.API_MODE,
-                API_BASE_URL: window.CONFIG.API_BASE_URL
-            }});
-            
             // config.js 로드 후 CONFIG 객체 강제 업데이트
             setTimeout(function() {{
                 if (window.CONFIG) {{
@@ -222,7 +208,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flas
                         API_MODE: 'flask',
                         API_BASE_URL: apiUrl
                     }});
-                    console.log('[Streamlit] CONFIG 강제 업데이트 완료:', window.CONFIG);
                 }}
             }}, 100);
             
@@ -232,7 +217,6 @@ def prepare_html_for_streamlit(html_content, api_base_url='/api', api_mode='flas
                     if (window.CONFIG) {{
                         window.CONFIG.API_MODE = 'flask';
                         window.CONFIG.API_BASE_URL = apiUrl;
-                        console.log('[Streamlit] DOMContentLoaded 후 CONFIG 재설정:', window.CONFIG);
                     }}
                 }});
             }}
