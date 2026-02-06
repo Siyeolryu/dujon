@@ -288,6 +288,263 @@ section[data-testid="stSidebar"] .stButton > button {
     .top-nav a { text-align: center; }
     [data-testid="column"] { min-width: 0 !important; }
 }
+
+/* ========== KPI 카드 그리드 시스템 ========== */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.kpi-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #e9ecef;
+}
+.kpi-card.danger::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+.kpi-card.success::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.kpi-card.info::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.kpi-card.warning::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.kpi-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1a1d21;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+.kpi-label {
+    font-size: 14px;
+    color: #6c757d;
+    margin-top: 8px;
+    font-weight: 500;
+}
+.kpi-sublabel {
+    font-size: 12px;
+    color: #adb5bd;
+    margin-top: 4px;
+}
+.kpi-link-btn {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    color: #fff !important;
+    text-decoration: none !important;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(13,110,253,0.3);
+}
+.kpi-link-btn:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13,110,253,0.4);
+    color: #fff !important;
+}
+
+/* ========== 네비게이션 버튼 ========== */
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    min-width: 120px;
+    margin: 4px;
+}
+.nav-btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    color: #fff !important;
+    box-shadow: 0 2px 4px rgba(13,110,253,0.3);
+}
+.nav-btn-primary:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+    box-shadow: 0 4px 8px rgba(13,110,253,0.4);
+    transform: translateY(-1px);
+    color: #fff !important;
+}
+.nav-btn-secondary {
+    background: #fff;
+    color: #495057 !important;
+    border: 1px solid #dee2e6;
+}
+.nav-btn-secondary:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #495057 !important;
+}
+.nav-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+/* ========== 퀵 액션 버튼 ========== */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+}
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    text-decoration: none !important;
+    color: #495057 !important;
+    transition: all 0.2s ease;
+}
+.quick-action-btn:hover {
+    background: #f8f9fa;
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.quick-action-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+.quick-action-text {
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* ========== 정보 카드 ========== */
+.info-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+}
+.info-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1d21;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e9ecef;
+}
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f5;
+}
+.info-row:last-child {
+    border-bottom: none;
+}
+.info-label {
+    color: #6c757d;
+    font-size: 14px;
+}
+.info-value {
+    color: #1a1d21;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ========== 섹션 헤더 ========== */
+.section-header {
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e9ecef;
+}
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1d21;
+    margin: 0;
+}
+.section-subtitle {
+    font-size: 13px;
+    color: #6c757d;
+    margin-left: 12px;
+}
+
+/* ========== 차트 컨테이너 ========== */
+.chart-container {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1d21;
+    margin-bottom: 16px;
+}
+
+/* ========== 반응형 KPI 그리드 ========== */
+@media (max-width: 992px) {
+    .kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    .kpi-card {
+        padding: 16px 14px;
+    }
+    .kpi-value {
+        font-size: 28px;
+    }
+    .kpi-label {
+        font-size: 13px;
+    }
+    .kpi-link-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 480px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 """
 
@@ -314,31 +571,6 @@ def render_top_nav(current_page=None):
     current_page: 현재 페이지의 URL path(identifier). None이면 홈.
     Streamlit 파일명 기반 URL: 2_현장_목록.py → /2_현장_목록
     """
-    # #region agent log - 네비게이션 URL 불일치 확인용
-    import os
-    import json
-    from datetime import datetime
-    log_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.cursor', 'debug.log')
-    try:
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                'location': 'theme.py:render_top_nav',
-                'message': 'Navigation render',
-                'data': {
-                    'current_page': current_page,
-                    'nav_links': NAV_LINKS,
-                    'expected_urls': [f'/{path}' for _, path in NAV_LINKS]
-                },
-                'timestamp': int(datetime.now().timestamp() * 1000),
-                'sessionId': 'debug-session',
-                'runId': 'nav-check',
-                'hypothesisId': 'nav-url-mismatch'
-            }, ensure_ascii=False) + '\n')
-    except Exception:
-        pass
-    # #endregion
-    
     home_class = "active" if current_page is None else ""
     parts = [f'<a href="/" class="{home_class}">홈</a>']
     for label, path in NAV_LINKS:

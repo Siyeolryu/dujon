@@ -16,6 +16,7 @@ from streamlit_utils.api_client import (
     check_api_connection,
 )
 from streamlit_utils.theme import apply_localhost_theme
+from streamlit_utils.components import render_status_badge
 
 apply_localhost_theme()
 
@@ -128,8 +129,9 @@ if api_mode != 'supabase':
 
 # ========== 쿼리 파라미터에서 필터 읽기 ==========
 query_params = st.query_params
-initial_status = query_params.get('status', [''])[0] if 'status' in query_params else ''
-initial_company = query_params.get('company', [''])[0] if 'company' in query_params else ''
+# st.query_params (Streamlit 1.30+): dict-like, .get()은 단일 값 반환
+initial_status = query_params.get('status', '') or ''
+initial_company = query_params.get('company', '') or ''
 
 # ========== 필터 섹션 ==========
 st.markdown('<div class="filter-section-container">', unsafe_allow_html=True)
@@ -229,14 +231,18 @@ with st.expander('고급 필터 (날짜 범위, 담당소장)', expanded=False):
         )
     
     if st.button('필터 초기화', use_container_width=True):
-        st.session_state.filter_company_radio = ''
-        st.session_state.filter_status_radio = ''
-        st.session_state.filter_state_radio = ''
-        st.session_state.filter_manager = ''
-        st.session_state.filter_date_start = None
-        st.session_state.filter_date_end = None
+        # 라디오 필터 초기화
+        for key in ('filter_company_radio', 'filter_status_radio', 'filter_state_radio', 'filter_manager'):
+            if key in st.session_state:
+                del st.session_state[key]
+        # 날짜 필터 초기화
+        for key in ('filter_date_start', 'filter_date_end'):
+            if key in st.session_state:
+                del st.session_state[key]
+        # 검색어 초기화 (search_input widget key는 삭제해서 default로 복원)
         st.session_state.search_query = ''
-        st.session_state.search_input = ''
+        if 'search_input' in st.session_state:
+            del st.session_state['search_input']
         st.session_state.current_page = 1
         st.rerun()
 
@@ -322,29 +328,6 @@ if st.session_state.sort_column in df.columns:
         ascending=st.session_state.sort_asc,
         na_position='last',
     )
-
-# ========== 상태 배지 스타일 함수 ==========
-def render_status_badge(status, badge_type='assignment'):
-    """상태 배지 렌더링"""
-    colors = {
-        'assignment': {
-            '배정완료': ('#10b981', '#d1fae5'),  # 초록
-            '미배정': ('#ef4444', '#fee2e2'),    # 빨강
-        },
-        'site_state': {
-            '건축허가': ('#6b7280', '#f3f4f6'),  # 회색
-            '착공예정': ('#3b82f6', '#dbeafe'),  # 파란색
-            '공사 중': ('#f59e0b', '#fef3c7'),    # 주황색
-            '공사 중단': ('#ef4444', '#fee2e2'),  # 빨강
-            '준공': ('#10b981', '#d1fae5'),      # 초록
-        }
-    }
-    
-    color_map = colors.get(badge_type, {})
-    if status in color_map:
-        text_color, bg_color = color_map[status]
-        return f'<span style="background-color: {bg_color}; color: {text_color}; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;">{status}</span>'
-    return status
 
 # ========== 페이지네이션 계산 ==========
 total_pages = max(1, (total_count + st.session_state.page_size - 1) // st.session_state.page_size)

@@ -1,11 +1,18 @@
 """
 대시보드 - 통계 요약 및 시각화 (임원용)
-로컬호스트와 동일한 메트릭 카드 + 배정/현장상태/인력 차트 (API/Supabase 연동)
-맵·이모지 없음, 밝은 색상·가독성 중심.
+KPI 카드 + 배정/현장상태/인력 차트 (API/Supabase 연동)
+Modern UI: 호버 효과, 반응형 그리드, 버튼 스타일 네비게이션
 """
+import os
 import streamlit as st
 from streamlit_utils.api_client import check_api_connection, get_stats
 from streamlit_utils.theme import apply_localhost_theme
+from streamlit_utils.components import (
+    render_kpi_card,
+    render_kpi_grid_start,
+    render_kpi_grid_end,
+    render_section_header,
+)
 
 apply_localhost_theme()
 st.title("대시보드")
@@ -50,22 +57,21 @@ def _normalize_stats(raw):
     }
 
 
-# 차트용 밝은 색상 (임원 가독성)
-CHART_COLORS_LIGHT = [
-    "#e3f2fd",  # 연한 파랑
-    "#e8f5e9",  # 연한 녹색
-    "#fff3e0",  # 연한 주황
-    "#f3e5f5",  # 연한 보라
-    "#fce4ec",  # 연한 분홍
-    "#f5f5f5",  # 연한 회색
-]
-BAR_COLOR_PRIMARY = "#90caf9"
-BAR_COLOR_SECONDARY = "#a5d6a7"
+# 차트 색상 팔레트
+CHART_COLORS = {
+    "primary": "#3b82f6",
+    "success": "#10b981",
+    "danger": "#ef4444",
+    "warning": "#f59e0b",
+    "info": "#06b6d4",
+    "secondary": "#6b7280",
+}
 
-
-# API 연결 상태
+# API / DB 연결 상태
+api_mode = os.getenv('API_MODE', '').strip().lower() or 'flask'
 is_connected, error_msg = check_api_connection()
-if not is_connected:
+
+if not is_connected and api_mode != 'supabase':
     st.error(f"**API 연결 실패**: {error_msg}")
     st.info(
         """
@@ -77,46 +83,78 @@ if not is_connected:
     아래 대시보드는 데이터 없음(0)으로 표시됩니다.
     """
     )
-else:
-    st.success("API 서버 연결 성공")
 
 # 통계 조회
 raw_stats, stats_err = get_stats()
 stats = _normalize_stats(raw_stats)
-if stats_err and is_connected:
+if stats_err and (is_connected or api_mode == 'supabase'):
     st.warning(f"통계 조회 실패: {stats_err}. 0으로 표시합니다.")
 
-# ----- 상단 KPI (한 줄 4~6개) -----
+# ========== 상단 KPI 카드 그리드 ==========
 st.markdown("### 현황 요약")
-col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-with col1:
-    st.metric(label="전체 현장", value=stats["total_sites"])
-    st.markdown("[현장 목록](/현장_목록)")
+render_kpi_grid_start()
 
-with col2:
-    st.metric(label="미배정", value=stats["unassigned"])
-    st.markdown("[미배정 보기](/현장_목록?status=미배정)")
+# 전체 현장
+render_kpi_card(
+    label="전체 현장",
+    value=stats["total_sites"],
+    link_text="현장 목록",
+    link_url="/2_현장_목록",
+    status_class="info",
+)
 
-with col3:
-    st.metric(label="배정완료", value=stats["assigned"])
-    st.markdown("[배정완료 보기](/현장_목록?status=배정완료)")
+# 미배정 (위험 표시)
+render_kpi_card(
+    label="미배정",
+    value=stats["unassigned"],
+    link_text="미배정 보기",
+    link_url="/2_현장_목록",
+    status_class="danger" if stats["unassigned"] > 0 else "",
+)
 
-with col4:
-    st.metric(
-        label="투입가능 인원",
-        value=f"{stats['available_personnel']} / {stats['total_personnel']}",
-        delta=None,
-    )
-    st.caption(f"전체 {stats['total_personnel']}명, 투입가능 {stats['available_personnel']}명")
+# 배정완료 (성공 표시)
+render_kpi_card(
+    label="배정완료",
+    value=stats["assigned"],
+    link_text="배정완료 보기",
+    link_url="/2_현장_목록",
+    status_class="success" if stats["assigned"] > 0 else "",
+)
 
-with col5:
-    st.metric(label="사용가능 자격증", value=stats["available_certificates"])
+# 투입가능 인원
+render_kpi_card(
+    label="투입가능 인원",
+    value=f"{stats['available_personnel']}",
+    link_text="인원 상세",
+    link_url="/8_투입가능인원_상세",
+    status_class="info",
+    sublabel=f"전체 {stats['total_personnel']}명 중",
+)
 
-with col6:
-    st.metric(label="전체 자격증", value=stats["total_certificates"])
+# 사용가능 자격증
+render_kpi_card(
+    label="사용가능 자격증",
+    value=stats["available_certificates"],
+    status_class="info",
+    sublabel=f"전체 {stats['total_certificates']}개 중",
+)
 
-# ----- 2단: 좌 현장 현황 / 우 인력·자격증 -----
+# 전체 자격증
+render_kpi_card(
+    label="전체 자격증",
+    value=stats["total_certificates"],
+)
+
+render_kpi_grid_end()
+
+# 미배정 5건 이상 시 경고
+if stats["unassigned"] >= 5 and (is_connected or api_mode == 'supabase'):
+    st.warning("⚠️ 미배정 현장이 5건 이상입니다. 현장 목록에서 배정을 진행해 주세요.")
+
+st.markdown("---")
+
+# ========== 2단 레이아웃: 좌 현장 현황 / 우 인력·자격증 ==========
 left_col, right_col = st.columns(2)
 
 with left_col:
@@ -137,33 +175,52 @@ with left_col:
                         name="배정완료",
                         x=["배정완료"],
                         y=[assigned],
-                        marker_color="#a5d6a7",
+                        marker_color=CHART_COLORS["success"],
                         text=[assigned],
                         textposition="outside",
+                        textfont=dict(size=14, color="#1a1d21"),
                     ),
                     go.Bar(
                         name="미배정",
                         x=["미배정"],
                         y=[unassigned],
-                        marker_color="#ef9a9a",
+                        marker_color=CHART_COLORS["danger"],
                         text=[unassigned],
                         textposition="outside",
+                        textfont=dict(size=14, color="#1a1d21"),
                     ),
                 ],
                 layout=go.Layout(
                     barmode="group",
                     showlegend=True,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02),
-                    margin=dict(t=40, b=40, l=40, r=40),
-                    height=280,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="center",
+                        x=0.5,
+                        font=dict(size=12),
+                    ),
+                    margin=dict(t=50, b=40, l=40, r=40),
+                    height=300,
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(size=13),
-                    xaxis=dict(tickfont=dict(size=13)),
-                    yaxis=dict(title="건수", title_font=dict(size=13)),
+                    font=dict(size=13, color="#495057"),
+                    xaxis=dict(
+                        tickfont=dict(size=13),
+                        showgrid=False,
+                    ),
+                    yaxis=dict(
+                        title="건수",
+                        title_font=dict(size=13),
+                        gridcolor="#f1f3f5",
+                        gridwidth=1,
+                    ),
                 ),
             )
             st.plotly_chart(fig_bar, use_container_width=True, key="dashboard_assign_bar")
+        except ImportError:
+            st.warning("Plotly가 설치되지 않았습니다. `pip install plotly` 실행 후 다시 시도해주세요.")
         except Exception as e:
             st.warning(f"차트를 그리지 못했습니다: {e}")
 
@@ -176,11 +233,22 @@ with left_col:
     state_labels += [k for k in sorted(by_state.keys()) if k not in state_order]
     state_values = [by_state.get(lb, 0) for lb in state_labels]
 
+    # 상태별 색상 매핑
+    state_colors = {
+        "건축허가": "#6b7280",
+        "착공예정": "#3b82f6",
+        "공사 중": "#f59e0b",
+        "공사 중단": "#ef4444",
+        "준공": "#10b981",
+    }
+
     if not state_labels:
         st.caption("현장상태 데이터가 없습니다.")
     else:
         try:
             import plotly.graph_objects as go
+
+            bar_colors = [state_colors.get(s, CHART_COLORS["primary"]) for s in state_labels]
 
             fig_state = go.Figure(
                 data=[
@@ -188,32 +256,62 @@ with left_col:
                         x=state_values,
                         y=state_labels,
                         orientation="h",
-                        marker_color=BAR_COLOR_PRIMARY,
+                        marker_color=bar_colors,
                         text=state_values,
                         textposition="outside",
+                        textfont=dict(size=13, color="#1a1d21"),
                     )
                 ],
                 layout=go.Layout(
-                    margin=dict(t=24, b=40, l=80, r=40),
-                    height=max(220, len(state_labels) * 36),
+                    margin=dict(t=24, b=40, l=100, r=40),
+                    height=max(220, len(state_labels) * 45),
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(size=13),
-                    xaxis=dict(title="건수", title_font=dict(size=13)),
-                    yaxis=dict(tickfont=dict(size=13)),
+                    font=dict(size=13, color="#495057"),
+                    xaxis=dict(
+                        title="건수",
+                        title_font=dict(size=13),
+                        gridcolor="#f1f3f5",
+                    ),
+                    yaxis=dict(
+                        tickfont=dict(size=13),
+                        autorange="reversed",
+                    ),
                 ),
             )
             st.plotly_chart(fig_state, use_container_width=True, key="dashboard_state_bar")
+        except ImportError:
+            st.warning("Plotly가 설치되지 않았습니다.")
         except Exception as e:
             st.warning(f"현장상태 차트 오류: {e}")
 
 with right_col:
     st.markdown("#### 인력 현황")
-    st.metric(
-        label="전체 / 투입가능 / 투입중",
-        value=f"{stats['total_personnel']} / {stats['available_personnel']} / {stats.get('deployed_personnel', 0)}",
-    )
-    st.markdown("[투입가능인원 상세](/투입가능인원_상세)")
+
+    # 인력 현황 요약 카드
+    st.markdown(f"""
+    <div class="info-card">
+        <div class="info-row">
+            <span class="info-label">전체 인원</span>
+            <span class="info-value">{stats['total_personnel']}명</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">투입가능</span>
+            <span class="info-value" style="color: #10b981;">{stats['available_personnel']}명</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">투입중</span>
+            <span class="info-value" style="color: #f59e0b;">{stats.get('deployed_personnel', 0)}명</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 버튼 스타일 링크
+    st.markdown("""
+    <a href="/8_투입가능인원_상세" class="nav-btn nav-btn-primary" style="display: inline-block; margin-top: 8px;">
+        투입가능인원 상세 보기
+    </a>
+    """, unsafe_allow_html=True)
 
     st.markdown("#### 직책별 인원")
     by_role = {}
@@ -233,28 +331,74 @@ with right_col:
                     go.Bar(
                         x=role_labels,
                         y=role_values,
-                        marker_color=BAR_COLOR_SECONDARY,
+                        marker_color=CHART_COLORS["primary"],
                         text=role_values,
                         textposition="outside",
+                        textfont=dict(size=13, color="#1a1d21"),
                     )
                 ],
                 layout=go.Layout(
-                    margin=dict(t=24, b=60, l=40, r=40),
-                    height=max(220, len(role_labels) * 40),
+                    margin=dict(t=24, b=70, l=40, r=40),
+                    height=max(250, len(role_labels) * 50),
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(size=13),
-                    xaxis=dict(tickangle=-30, tickfont=dict(size=12)),
-                    yaxis=dict(title="인원", title_font=dict(size=13)),
+                    font=dict(size=13, color="#495057"),
+                    xaxis=dict(
+                        tickangle=-30,
+                        tickfont=dict(size=12),
+                    ),
+                    yaxis=dict(
+                        title="인원",
+                        title_font=dict(size=13),
+                        gridcolor="#f1f3f5",
+                    ),
                 ),
             )
             st.plotly_chart(fig_role, use_container_width=True, key="dashboard_role_bar")
+        except ImportError:
+            st.warning("Plotly가 설치되지 않았습니다.")
         except Exception as e:
             st.warning(f"직책별 차트 오류: {e}")
 
     st.markdown("#### 자격증 요약")
-    st.caption(f"사용가능 {stats['available_certificates']} / 전체 {stats['total_certificates']}")
+    st.markdown(f"""
+    <div class="info-card">
+        <div class="info-row">
+            <span class="info-label">전체 자격증</span>
+            <span class="info-value">{stats['total_certificates']}개</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">사용가능</span>
+            <span class="info-value" style="color: #10b981;">{stats['available_certificates']}개</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">사용중</span>
+            <span class="info-value" style="color: #f59e0b;">{stats['total_certificates'] - stats['available_certificates']}개</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# 미배정 5건 이상 시 강조
-if stats["unassigned"] >= 5 and is_connected:
-    st.warning("미배정 현장이 5건 이상입니다. 현장 목록에서 배정을 진행해 주세요.")
+# ========== 하단: 빠른 액션 ==========
+st.markdown("---")
+st.markdown("### 빠른 액션")
+
+st.markdown("""
+<div class="quick-actions">
+    <a href="/3_현장등록" class="quick-action-btn">
+        <span class="quick-action-icon">🏗️</span>
+        <span class="quick-action-text">현장 등록</span>
+    </a>
+    <a href="/4_자격증등록" class="quick-action-btn">
+        <span class="quick-action-icon">📜</span>
+        <span class="quick-action-text">자격증 등록</span>
+    </a>
+    <a href="/2_현장_목록" class="quick-action-btn">
+        <span class="quick-action-icon">📋</span>
+        <span class="quick-action-text">현장 목록</span>
+    </a>
+    <a href="/8_투입가능인원_상세" class="quick-action-btn">
+        <span class="quick-action-icon">👷</span>
+        <span class="quick-action-text">인원 상세</span>
+    </a>
+</div>
+""", unsafe_allow_html=True)
