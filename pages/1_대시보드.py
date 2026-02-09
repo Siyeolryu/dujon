@@ -194,39 +194,8 @@ stats = _normalize_stats(raw_stats)
 if stats_err and is_connected:
     st.warning(f"통계 조회 실패: {stats_err}. 0으로 표시합니다.")
 
-# ----- 상단 KPI (한 줄 4~6개) -----
-st.markdown('<div class="section-header">📌 현황 요약</div>', unsafe_allow_html=True)
-col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-with col1:
-    st.metric(label="전체 현장", value=stats["total_sites"])
-    st.markdown("[현장 목록](/현장_목록)")
-
-with col2:
-    st.metric(label="미배정", value=stats["unassigned"])
-    st.markdown("[미배정 보기](/현장_목록?status=미배정)")
-
-with col3:
-    st.metric(label="배정완료", value=stats["assigned"])
-    st.markdown("[배정완료 보기](/현장_목록?status=배정완료)")
-
-with col4:
-    st.metric(
-        label="투입가능 인원",
-        value=f"{stats['available_personnel']} / {stats['total_personnel']}",
-        delta=None,
-    )
-    st.caption(f"전체 {stats['total_personnel']}명, 투입가능 {stats['available_personnel']}명")
-
-with col5:
-    st.metric(label="사용가능 자격증", value=stats["available_certificates"])
-
-with col6:
-    st.metric(label="전체 자격증", value=stats["total_certificates"])
-
 # ----- 빠른 배정 섹션 -----
 if stats["unassigned"] > 0 and is_connected:
-    st.markdown("---")
     st.markdown('<div class="section-header">⚡ 빠른 배정</div>', unsafe_allow_html=True)
 
     # 미배정 현장 가져오기
@@ -318,6 +287,42 @@ if stats["unassigned"] > 0 and is_connected:
                                     st.balloons()
                                     # 대시보드 새로고침
                                     st.rerun()
+
+    st.markdown("---")
+
+# ----- 상단 KPI (한 줄 4~6개) -----
+st.markdown('<div class="section-header">📌 현황 요약</div>', unsafe_allow_html=True)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+with col1:
+    st.metric(label="전체 현장", value=stats["total_sites"])
+    st.page_link("pages/2_현장_목록.py", label="📋 현장 목록", icon="📋")
+
+with col2:
+    st.metric(label="미배정", value=stats["unassigned"])
+    if st.button("🔍 미배정 보기", key="link_unassigned", use_container_width=True):
+        st.query_params["status"] = "미배정"
+        st.switch_page("pages/2_현장_목록.py")
+
+with col3:
+    st.metric(label="배정완료", value=stats["assigned"])
+    if st.button("✅ 배정완료 보기", key="link_assigned", use_container_width=True):
+        st.query_params["status"] = "배정완료"
+        st.switch_page("pages/2_현장_목록.py")
+
+with col4:
+    st.metric(
+        label="투입가능 인원",
+        value=f"{stats['available_personnel']} / {stats['total_personnel']}",
+        delta=None,
+    )
+    st.caption(f"전체 {stats['total_personnel']}명, 투입가능 {stats['available_personnel']}명")
+
+with col5:
+    st.metric(label="사용가능 자격증", value=stats["available_certificates"])
+
+with col6:
+    st.metric(label="전체 자격증", value=stats["total_certificates"])
 
 # ----- 탭으로 구분된 상세 뷰 -----
 st.markdown("---")
@@ -428,7 +433,7 @@ with tab2:
             label="전체 / 투입가능 / 투입중",
             value=f"{stats['total_personnel']} / {stats['available_personnel']} / {stats.get('deployed_personnel', 0)}",
         )
-        st.markdown("[투입가능인원 상세](/투입가능인원_상세)")
+        st.page_link("pages/8_투입가능인원_상세.py", label="👥 투입가능인원 상세", icon="👥")
 
         st.markdown("### 자격증 요약")
         col_cert1, col_cert2 = st.columns(2)
@@ -573,44 +578,4 @@ with tab3:
             label="전체 / 투입가능 / 투입중",
             value=f"{stats['total_personnel']} / {stats['available_personnel']} / {stats.get('deployed_personnel', 0)}",
         )
-        st.markdown("[투입가능인원 상세](/투입가능인원_상세)")
-
-        st.markdown('<div class="section-header-teal">👔 직책별 인원</div>', unsafe_allow_html=True)
-        by_role = {}
-        if raw_stats and isinstance(raw_stats, dict) and "personnel" in raw_stats:
-            by_role = (raw_stats.get("personnel") or {}).get("by_role") or {}
-        role_labels = sorted(by_role.keys()) if by_role else []
-        role_values = [by_role.get(r, 0) for r in role_labels]
-
-        if not role_labels:
-            st.caption("직책별 데이터가 없습니다.")
-        else:
-            try:
-                import plotly.graph_objects as go
-
-                fig_role = go.Figure(
-                    data=[
-                        go.Bar(
-                            x=role_labels,
-                            y=role_values,
-                            marker_color=BAR_COLOR_SECONDARY,
-                            text=role_values,
-                            textposition="outside",
-                        )
-                    ],
-                    layout=go.Layout(
-                        margin=dict(t=24, b=60, l=40, r=40),
-                        height=max(220, len(role_labels) * 40),
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font=dict(size=13),
-                        xaxis=dict(tickangle=-30, tickfont=dict(size=12)),
-                        yaxis=dict(title="인원", title_font=dict(size=13)),
-                    ),
-                )
-                st.plotly_chart(fig_role, use_container_width=True, key="dashboard_role_bar")
-            except Exception as e:
-                st.warning(f"직책별 차트 오류: {e}")
-
-        st.markdown('<div class="section-header">📜 자격증 요약</div>', unsafe_allow_html=True)
-        st.caption(f"사용가능 {stats['available_certificates']} / 전체 {stats['total_certificates']}")
+        st.page_link("pages/8_투입가능인원_상세.py", label="👥 투입가능인원 상세", icon="👥")
