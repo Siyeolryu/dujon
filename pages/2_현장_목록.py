@@ -128,8 +128,10 @@ if api_mode != 'supabase':
 
 # ========== 쿼리 파라미터에서 필터 읽기 ==========
 query_params = st.query_params
-initial_status = query_params.get('status', [''])[0] if 'status' in query_params else ''
-initial_company = query_params.get('company', [''])[0] if 'company' in query_params else ''
+_status_raw = query_params.get('status', '')
+initial_status = _status_raw[0] if isinstance(_status_raw, list) else _status_raw
+_company_raw = query_params.get('company', '')
+initial_company = _company_raw[0] if isinstance(_company_raw, list) else _company_raw
 
 # ========== 필터 섹션 ==========
 st.markdown('<div class="filter-section-container">', unsafe_allow_html=True)

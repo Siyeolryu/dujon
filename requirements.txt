@@ -1,7 +1,7 @@
 # Streamlit 웹 운영용 (Streamlit Cloud 등에서 requirements.txt 기본 사용 시)
 # 로컬: pip install -r requirements_streamlit.txt 또는 pip install -r requirements.txt
 
-streamlit>=1.28.0
+streamlit>=1.35.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 plotly>=5.14.0

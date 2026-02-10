@@ -82,37 +82,21 @@ st.markdown("""
         color: #1f77b4;
     }
 
-    /* KPI 카드 컨테이너 정렬 */
-    [data-testid="column"] {
-        display: flex;
-        flex-direction: column;
+    /* KPI 카드 컨테이너 정렬 — 안정적인 min-height 방식 */
+    [data-testid="stMetric"] {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 16px 12px 8px 12px;
+        min-height: 120px;
     }
 
-    /* KPI 링크 및 버튼 스타일 통일 */
+    /* KPI 버튼 스타일 통일 */
     .stButton button {
         width: 100%;
         margin-top: 8px;
         font-size: 13px;
         padding: 6px 12px;
-    }
-
-    /* page_link 스타일 */
-    a[data-testid="stPageLink-NavLink"] {
-        display: inline-block;
-        width: 100%;
-        text-align: center;
-        margin-top: 8px;
-        padding: 6px 12px;
-        border-radius: 6px;
-        background: #f0f2f6;
-        text-decoration: none;
-        font-size: 13px;
-        transition: all 0.2s ease;
-    }
-
-    a[data-testid="stPageLink-NavLink"]:hover {
-        background: #e0e3e9;
-        transform: translateY(-1px);
     }
 
     /* 차트 컨테이너 */
@@ -329,7 +313,8 @@ col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     st.metric(label="전체 현장", value=stats["total_sites"])
-    st.page_link("pages/2_현장_목록.py", label="📋 현장 목록", icon="📋")
+    if st.button("📋 현장 목록", key="nav_sites_list", use_container_width=True):
+        st.switch_page("pages/2_현장_목록.py")
 
 with col2:
     st.metric(label="미배정", value=stats["unassigned"])
@@ -349,15 +334,14 @@ with col4:
         value=f"{stats['available_personnel']} / {stats['total_personnel']}",
         delta=None,
     )
-    st.page_link("pages/8_투입가능인원_상세.py", label="👥 인력 상세", icon="👥")
+    if st.button("👥 인력 상세", key="nav_personnel", use_container_width=True):
+        st.switch_page("pages/8_투입가능인원_상세.py")
 
 with col5:
     st.metric(label="사용가능 자격증", value=stats["available_certificates"])
-    st.markdown('<div style="height: 38px;"></div>', unsafe_allow_html=True)
 
 with col6:
     st.metric(label="전체 자격증", value=stats["total_certificates"])
-    st.markdown('<div style="height: 38px;"></div>', unsafe_allow_html=True)
 
 # ----- 탭으로 구분된 상세 뷰 -----
 st.markdown("---")
@@ -468,7 +452,8 @@ with tab2:
             label="전체 / 투입가능 / 투입중",
             value=f"{stats['total_personnel']} / {stats['available_personnel']} / {stats.get('deployed_personnel', 0)}",
         )
-        st.page_link("pages/8_투입가능인원_상세.py", label="👥 투입가능인원 상세", icon="👥")
+        if st.button("👥 투입가능인원 상세", key="nav_personnel_tab2", use_container_width=True):
+            st.switch_page("pages/8_투입가능인원_상세.py")
 
         st.markdown("### 자격증 요약")
         col_cert1, col_cert2 = st.columns(2)
@@ -613,4 +598,5 @@ with tab3:
             label="전체 / 투입가능 / 투입중",
             value=f"{stats['total_personnel']} / {stats['available_personnel']} / {stats.get('deployed_personnel', 0)}",
         )
-        st.page_link("pages/8_투입가능인원_상세.py", label="👥 투입가능인원 상세", icon="👥")
+        if st.button("👥 투입가능인원 상세", key="nav_personnel_tab3", use_container_width=True):
+            st.switch_page("pages/8_투입가능인원_상세.py")
