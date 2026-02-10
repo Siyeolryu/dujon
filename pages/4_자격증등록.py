@@ -130,6 +130,10 @@ if submitted:
             if data:
                 st.info(f"부여된 자격증ID: {data.get('자격증ID', '-')}, 소유자ID: {data.get('소유자ID', '-')}")
             st.caption('자격증 목록·투입가능인원에서 확인하세요.')
-            st.markdown('[자격증 등록](/자격증등록) · [투입가능인원 상세](/투입가능인원_상세)')
-            if st.button('다른 자격증 등록'):
-                st.rerun()
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if st.button('다른 자격증 등록', key='reg_again_cert'):
+                    st.rerun()
+            with col_b:
+                if st.button('👥 투입가능인원 상세', key='nav_to_personnel'):
+                    st.switch_page('pages/8_투입가능인원_상세.py')
