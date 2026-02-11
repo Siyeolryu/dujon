@@ -71,23 +71,23 @@ st.markdown('### 빠른 액션')
 
 st.markdown("""
 <div class="quick-actions">
-    <a href="/1_대시보드" class="quick-action-btn">
+    <a href="/대시보드" class="quick-action-btn">
         <span class="quick-action-icon">📊</span>
         <span class="quick-action-text">대시보드</span>
     </a>
-    <a href="/2_현장_목록" class="quick-action-btn">
+    <a href="/현장_목록" class="quick-action-btn">
         <span class="quick-action-icon">📋</span>
         <span class="quick-action-text">현장 목록</span>
     </a>
-    <a href="/3_현장등록" class="quick-action-btn">
+    <a href="/현장등록" class="quick-action-btn">
         <span class="quick-action-icon">🏗️</span>
         <span class="quick-action-text">현장 등록</span>
     </a>
-    <a href="/4_자격증등록" class="quick-action-btn">
+    <a href="/자격증등록" class="quick-action-btn">
         <span class="quick-action-icon">📜</span>
         <span class="quick-action-text">자격증 등록</span>
     </a>
-    <a href="/8_투입가능인원_상세" class="quick-action-btn">
+    <a href="/투입가능인원_상세" class="quick-action-btn">
         <span class="quick-action-icon">👷</span>
         <span class="quick-action-text">인원 상세</span>
     </a>

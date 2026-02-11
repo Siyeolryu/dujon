@@ -100,7 +100,7 @@ render_kpi_card(
     label="전체 현장",
     value=stats["total_sites"],
     link_text="현장 목록",
-    link_url="/2_현장_목록",
+    link_url="/현장_목록",
     status_class="info",
 )
 
@@ -109,7 +109,7 @@ render_kpi_card(
     label="미배정",
     value=stats["unassigned"],
     link_text="미배정 보기",
-    link_url="/2_현장_목록",
+    link_url="/현장_목록",
     status_class="danger" if stats["unassigned"] > 0 else "",
 )
 
@@ -118,7 +118,7 @@ render_kpi_card(
     label="배정완료",
     value=stats["assigned"],
     link_text="배정완료 보기",
-    link_url="/2_현장_목록",
+    link_url="/현장_목록",
     status_class="success" if stats["assigned"] > 0 else "",
 )
 
@@ -127,7 +127,7 @@ render_kpi_card(
     label="투입가능 인원",
     value=f"{stats['available_personnel']}",
     link_text="인원 상세",
-    link_url="/8_투입가능인원_상세",
+    link_url="/투입가능인원_상세",
     status_class="info",
     sublabel=f"전체 {stats['total_personnel']}명 중",
 )
@@ -308,7 +308,7 @@ with right_col:
 
     # 버튼 스타일 링크
     st.markdown("""
-    <a href="/8_투입가능인원_상세" class="nav-btn nav-btn-primary" style="display: inline-block; margin-top: 8px;">
+    <a href="/투입가능인원_상세" class="nav-btn nav-btn-primary" style="display: inline-block; margin-top: 8px;">
         투입가능인원 상세 보기
     </a>
     """, unsafe_allow_html=True)
@@ -384,19 +384,19 @@ st.markdown("### 빠른 액션")
 
 st.markdown("""
 <div class="quick-actions">
-    <a href="/3_현장등록" class="quick-action-btn">
+    <a href="/현장등록" class="quick-action-btn">
         <span class="quick-action-icon">🏗️</span>
         <span class="quick-action-text">현장 등록</span>
     </a>
-    <a href="/4_자격증등록" class="quick-action-btn">
+    <a href="/자격증등록" class="quick-action-btn">
         <span class="quick-action-icon">📜</span>
         <span class="quick-action-text">자격증 등록</span>
     </a>
-    <a href="/2_현장_목록" class="quick-action-btn">
+    <a href="/현장_목록" class="quick-action-btn">
         <span class="quick-action-icon">📋</span>
         <span class="quick-action-text">현장 목록</span>
     </a>
-    <a href="/8_투입가능인원_상세" class="quick-action-btn">
+    <a href="/투입가능인원_상세" class="quick-action-btn">
         <span class="quick-action-icon">👷</span>
         <span class="quick-action-text">인원 상세</span>
     </a>

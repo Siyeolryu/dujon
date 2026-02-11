@@ -289,12 +289,15 @@ section[data-testid="stSidebar"] .stButton > button {
     [data-testid="column"] { min-width: 0 !important; }
 }
 
-/* ========== KPI 카드 그리드 시스템 ========== */
+/* ========== KPI 카드 그리드 시스템 (병렬 정렬) ========== */
 .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    display: flex;
+    flex-direction: row;
     gap: 16px;
     margin-bottom: 24px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
 }
 .kpi-card {
     background: #fff;
@@ -305,6 +308,8 @@ section[data-testid="stSidebar"] .stButton > button {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     position: relative;
     overflow: hidden;
+    flex: 0 0 auto;
+    min-width: 180px;
 }
 .kpi-card::before {
     content: '';
@@ -509,19 +514,11 @@ section[data-testid="stSidebar"] .stButton > button {
     margin-bottom: 16px;
 }
 
-/* ========== 반응형 KPI 그리드 ========== */
-@media (max-width: 992px) {
-    .kpi-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
+/* ========== 반응형 KPI 그리드 (병렬 유지) ========== */
 @media (max-width: 768px) {
-    .kpi-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
     .kpi-card {
         padding: 16px 14px;
+        min-width: 160px;
     }
     .kpi-value {
         font-size: 28px;
@@ -538,8 +535,8 @@ section[data-testid="stSidebar"] .stButton > button {
     }
 }
 @media (max-width: 480px) {
-    .kpi-grid {
-        grid-template-columns: 1fr;
+    .kpi-card {
+        min-width: 140px;
     }
     .quick-actions {
         grid-template-columns: 1fr;
