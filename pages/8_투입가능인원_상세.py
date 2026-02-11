@@ -4,17 +4,18 @@
 """
 import streamlit as st
 import pandas as pd
-from streamlit_utils.api_client import (
-    get_personnel,
-    get_certificates,
-    check_api_connection,
+from streamlit_utils.cached_api import (
+    get_personnel_cached,
+    get_certificates_cached,
+    check_api_connection_cached,
 )
 from streamlit_utils.theme import apply_localhost_theme
+from streamlit_utils.export import render_quick_export_buttons, prepare_personnel_export
 
 apply_localhost_theme()
 st.title('투입가능 인원')
 
-is_connected, error_msg = check_api_connection()
+is_connected, error_msg = check_api_connection_cached()
 if not is_connected:
     st.error(f'API 연결 실패: {error_msg}')
     st.info('Flask 서버를 먼저 실행하세요: `python run_api.py`')
@@ -27,7 +28,7 @@ tab1, tab2 = st.tabs(['전체 인원', '투입가능 인원'])
 with tab1:
     st.subheader('전체 인원 목록')
     
-    personnel_list, err = get_personnel()
+    personnel_list, err = get_personnel_cached()
     if err:
         st.error(err)
         st.stop()
@@ -55,9 +56,18 @@ with tab1:
         filtered_personnel = [p for p in filtered_personnel if p.get('직책') == role_filter]
     
     st.caption(f'총 {len(filtered_personnel)}명')
+    
+    # 데이터 내보내기
+    if filtered_personnel:
+        export_df = prepare_personnel_export(filtered_personnel)
+        render_quick_export_buttons(
+            data=export_df,
+            filename_prefix="전체인원",
+            key_suffix="all_personnel"
+        )
 
     # 자격증 목록을 루프 밖에서 1회만 호출 (N+1 방지)
-    all_certs_tab1, _ = get_certificates()
+    all_certs_tab1, _ = get_certificates_cached()
 
     # 인원별 상세 정보 표시
     for person in filtered_personnel:
@@ -108,7 +118,7 @@ with tab1:
 with tab2:
     st.subheader('투입가능 인원 목록')
     
-    personnel_list, err = get_personnel(status='투입가능')
+    personnel_list, err = get_personnel_cached(status='투입가능')
     if err:
         st.error(err)
         st.stop()
@@ -136,9 +146,18 @@ with tab2:
         filtered_personnel = [p for p in filtered_personnel if p.get('직책') == role_filter]
     
     st.caption(f'투입가능 인원: {len(filtered_personnel)}명')
+    
+    # 데이터 내보내기
+    if filtered_personnel:
+        export_df = prepare_personnel_export(filtered_personnel)
+        render_quick_export_buttons(
+            data=export_df,
+            filename_prefix="투입가능인원",
+            key_suffix="available_personnel"
+        )
 
     # 자격증 목록을 루프 밖에서 1회만 호출 (N+1 방지)
-    all_certs_tab2, _ = get_certificates()
+    all_certs_tab2, _ = get_certificates_cached()
 
     # 인원별 상세 정보 표시
     for person in filtered_personnel:
