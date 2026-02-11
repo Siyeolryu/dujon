@@ -173,49 +173,39 @@ with left_col:
                 data=[
                     go.Bar(
                         name="배정완료",
-                        x=["배정완료"],
-                        y=[assigned],
-                        marker_color=CHART_COLORS["success"],
-                        text=[assigned],
+                        x=assign_labels,
+                        y=assign_values,
+                        marker_color=[
+                            CHART_COLORS["danger"] if lb == "미배정" else CHART_COLORS["success"]
+                            for lb in assign_labels
+                        ],
+                        text=assign_values,
                         textposition="outside",
-                        textfont=dict(size=14, color="#1a1d21"),
-                    ),
-                    go.Bar(
-                        name="미배정",
-                        x=["미배정"],
-                        y=[unassigned],
-                        marker_color=CHART_COLORS["danger"],
-                        text=[unassigned],
-                        textposition="outside",
-                        textfont=dict(size=14, color="#1a1d21"),
-                    ),
+                        textfont=dict(size=14, color="#1a1d21", family="Pretendard"),
+                    )
                 ],
-                layout=go.Layout(
-                    barmode="group",
-                    showlegend=True,
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=1.02,
-                        xanchor="center",
-                        x=0.5,
-                        font=dict(size=12),
-                    ),
-                    margin=dict(t=50, b=40, l=40, r=40),
-                    height=300,
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(size=13, color="#495057"),
-                    xaxis=dict(
-                        tickfont=dict(size=13),
-                        showgrid=False,
-                    ),
-                    yaxis=dict(
-                        title="건수",
-                        title_font=dict(size=13),
-                        gridcolor="#f1f3f5",
-                        gridwidth=1,
-                    ),
+            )
+            fig_bar.update_layout(
+                title=dict(
+                    text="배정 현황",
+                    xanchor="center",
+                    x=0.5,
+                    font=dict(size=12),
+                ),
+                margin=dict(t=50, b=40, l=40, r=40),
+                height=300,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(size=13, color="#495057"),
+                xaxis=dict(
+                    tickfont=dict(size=13),
+                    showgrid=False,
+                ),
+                yaxis=dict(
+                    title="건수",
+                    title_font=dict(size=13),
+                    gridcolor="#f1f3f5",
+                    gridwidth=1,
                 ),
             )
             st.plotly_chart(fig_bar, use_container_width=True, key="dashboard_assign_bar")
@@ -262,21 +252,21 @@ with left_col:
                         textfont=dict(size=13, color="#1a1d21"),
                     )
                 ],
-                layout=go.Layout(
-                    margin=dict(t=24, b=40, l=100, r=40),
-                    height=max(220, len(state_labels) * 45),
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(size=13, color="#495057"),
-                    xaxis=dict(
-                        title="건수",
-                        title_font=dict(size=13),
-                        gridcolor="#f1f3f5",
-                    ),
-                    yaxis=dict(
-                        tickfont=dict(size=13),
-                        autorange="reversed",
-                    ),
+            )
+            fig_state.update_layout(
+                margin=dict(t=24, b=40, l=100, r=40),
+                height=max(220, len(state_labels) * 45),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(size=13, color="#495057"),
+                xaxis=dict(
+                    title="건수",
+                    title_font=dict(size=13),
+                    gridcolor="#f1f3f5",
+                ),
+                yaxis=dict(
+                    tickfont=dict(size=13),
+                    autorange="reversed",
                 ),
             )
             st.plotly_chart(fig_state, use_container_width=True, key="dashboard_state_bar")
@@ -337,21 +327,21 @@ with right_col:
                         textfont=dict(size=13, color="#1a1d21"),
                     )
                 ],
-                layout=go.Layout(
-                    margin=dict(t=24, b=70, l=40, r=40),
-                    height=max(250, len(role_labels) * 50),
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(size=13, color="#495057"),
-                    xaxis=dict(
-                        tickangle=-30,
-                        tickfont=dict(size=12),
-                    ),
-                    yaxis=dict(
-                        title="인원",
-                        title_font=dict(size=13),
-                        gridcolor="#f1f3f5",
-                    ),
+            )
+            fig_role.update_layout(
+                margin=dict(t=24, b=70, l=40, r=40),
+                height=max(250, len(role_labels) * 50),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(size=13, color="#495057"),
+                xaxis=dict(
+                    tickangle=-30,
+                    tickfont=dict(size=12),
+                ),
+                yaxis=dict(
+                    title="인원",
+                    title_font=dict(size=13),
+                    gridcolor="#f1f3f5",
                 ),
             )
             st.plotly_chart(fig_role, use_container_width=True, key="dashboard_role_bar")
