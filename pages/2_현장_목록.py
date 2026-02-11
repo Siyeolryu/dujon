@@ -5,15 +5,18 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
+from streamlit_utils.cached_api import (
+    get_sites_cached,
+    search_sites_cached,
+    get_site_cached,
+    get_personnel_cached,
+    get_certificates_cached,
+    check_api_connection_cached,
+    clear_sites_cache,
+)
 from streamlit_utils.api_client import (
-    get_sites,
-    search_sites,
-    get_site,
-    get_personnel,
-    get_certificates,
     assign_site,
     unassign_site,
-    check_api_connection,
 )
 from streamlit_utils.theme import apply_localhost_theme
 from streamlit_utils.components import render_status_badge
@@ -122,7 +125,7 @@ st.title('현장 목록')
 import os
 api_mode = os.getenv('API_MODE', '').strip().lower() or 'flask'
 if api_mode != 'supabase':
-    is_connected, error_msg = check_api_connection()
+    is_connected, error_msg = check_api_connection_cached()
     if not is_connected:
         st.error(f'API 연결 실패: {error_msg}')
         st.info('Flask 서버를 먼저 실행하세요: `python run_api.py`')
@@ -208,7 +211,7 @@ with st.expander('고급 필터 (날짜 범위, 담당소장)', expanded=False):
     
     with adv_col1:
         # 담당소장명 필터를 위해 인력 목록 가져오기
-        personnel_list, _ = get_personnel(role='소장')
+        personnel_list, _ = get_personnel_cached(role='소장')
         manager_names = [''] + sorted(list(set([p.get('성명', '') for p in (personnel_list or []) if p.get('성명')])))
         selected_manager = st.selectbox(
             '담당소장명',
@@ -260,11 +263,11 @@ offset = (current_page - 1) * page_size
 
 if st.session_state.search_query and st.session_state.search_query.strip():
     # 검색은 클라이언트 사이드 (검색 결과가 적을 것으로 예상)
-    sites, err = search_sites(st.session_state.search_query.strip())
+    sites, err = search_sites_cached(st.session_state.search_query.strip())
     total_count = len(sites) if sites else 0
 else:
     # 서버 사이드 페이지네이션 사용
-    result, err = get_sites(
+    result, err = get_sites_cached(
         company=company or None,
         status=status or None,
         state=state or None,
@@ -385,14 +388,14 @@ if st.session_state.show_assign_modal and st.session_state.selected_site_id:
     with st.expander('소장 배정', expanded=True):
         st.markdown('<div class="assign-panel-box">', unsafe_allow_html=True)
         site_id = st.session_state.selected_site_id
-        detail, err = get_site(site_id)
+        detail, err = get_site_cached(site_id)
         if err and not detail:
             st.error(err)
         elif detail:
             st.info(f"**{detail.get('현장명', '')}** · 현장ID: `{site_id}`")
             version = detail.get('version', '')
-            personnel_list, _ = get_personnel(status='투입가능')
-            cert_list, _ = get_certificates(available=True)
+            personnel_list, _ = get_personnel_cached(status='투입가능')
+            cert_list, _ = get_certificates_cached(available=True)
             if not personnel_list:
                 st.warning('투입가능 인력이 없습니다.')
             elif not cert_list:
@@ -425,6 +428,7 @@ if st.session_state.show_assign_modal and st.session_state.selected_site_id:
                                     st.error(err)
                                 else:
                                     st.success('배정되었습니다.')
+                                    clear_sites_cache()  # 캐시 초기화
                                     st.session_state.show_assign_modal = False
                                     st.session_state.selected_site_id = None
                                     st.rerun()
@@ -512,6 +516,7 @@ with st.expander('빠른 액션 (행별 배정·해제·상세)', expanded=False
                         st.error(err)
                     else:
                         st.success('배정 해제됨')
+                        clear_sites_cache()  # 캐시 초기화
                         st.rerun()
             else:
                 if st.button('배정', key=f'assign_{site_id}', use_container_width=True):

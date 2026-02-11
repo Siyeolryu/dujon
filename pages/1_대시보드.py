@@ -5,7 +5,8 @@ Modern UI: 호버 효과, 반응형 그리드, 버튼 스타일 네비게이션
 """
 import os
 import streamlit as st
-from streamlit_utils.api_client import check_api_connection, get_stats
+from streamlit_utils.cached_api import check_api_connection_cached, get_stats_cached
+
 from streamlit_utils.theme import apply_localhost_theme
 from streamlit_utils.components import (
     render_kpi_card,
@@ -69,7 +70,7 @@ CHART_COLORS = {
 
 # API / DB 연결 상태
 api_mode = os.getenv('API_MODE', '').strip().lower() or 'flask'
-is_connected, error_msg = check_api_connection()
+is_connected, error_msg = check_api_connection_cached()
 
 if not is_connected and api_mode != 'supabase':
     st.error(f"**API 연결 실패**: {error_msg}")
@@ -85,7 +86,7 @@ if not is_connected and api_mode != 'supabase':
     )
 
 # 통계 조회
-raw_stats, stats_err = get_stats()
+raw_stats, stats_err = get_stats_cached()
 stats = _normalize_stats(raw_stats)
 if stats_err and (is_connected or api_mode == 'supabase'):
     st.warning(f"통계 조회 실패: {stats_err}. 0으로 표시합니다.")
