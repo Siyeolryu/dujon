@@ -17,3 +17,8 @@ backgroundColor = "#F8F9FA"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#2c3e50"
 font = "sans serif"
+
+# 위젯 색상 명시 (콘솔 경고 제거)
+widgetBackgroundColor = "#FFFFFF"
+widgetBorderColor = "#dee2e6"
+skeletonBackgroundColor = "#e9ecef"
