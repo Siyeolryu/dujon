@@ -1,7 +1,11 @@
 # Streamlit 웹 운영용 의존성
 # 사용: pip install -r requirements_streamlit.txt
 
+<<<<<<< HEAD
 streamlit>=1.28.0
+=======
+streamlit>=1.35.0
+>>>>>>> origin/claude/fix-dashboard-ui-AKgMs
 requests>=2.31.0
 python-dotenv>=1.0.0
 pandas>=2.0.0

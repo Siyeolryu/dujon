@@ -55,12 +55,23 @@ with tab1:
         filtered_personnel = [p for p in filtered_personnel if p.get('직책') == role_filter]
     
     st.caption(f'총 {len(filtered_personnel)}명')
+<<<<<<< HEAD
     
+=======
+
+    # 자격증 목록을 루프 밖에서 1회만 호출 (N+1 방지)
+    all_certs_tab1, _ = get_certificates()
+
+>>>>>>> origin/claude/fix-dashboard-ui-AKgMs
     # 인원별 상세 정보 표시
     for person in filtered_personnel:
         with st.expander(f"{person.get('성명', '-')} ({person.get('인력ID', '-')}) - {person.get('직책', '-')}", expanded=False):
             col_info, col_certs = st.columns([1, 1])
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> origin/claude/fix-dashboard-ui-AKgMs
             with col_info:
                 st.markdown('**인원 정보**')
                 st.write(f"**인력ID**: {person.get('인력ID', '-')}")
@@ -76,6 +87,7 @@ with tab1:
                 st.write(f"**등록일**: {person.get('등록일', '-')}")
                 if person.get('비고'):
                     st.write(f"**비고**: {person.get('비고')}")
+<<<<<<< HEAD
             
             with col_certs:
                 st.markdown('**보유 자격증**')
@@ -84,6 +96,15 @@ with tab1:
                 certs_list, _ = get_certificates()
                 person_certs = [c for c in (certs_list or []) if c.get('소유자명') == person_name]
                 
+=======
+
+            with col_certs:
+                st.markdown('**보유 자격증**')
+                # 해당 인원의 자격증 찾기 (소유자명으로 매칭, 전체 목록 재사용)
+                person_name = person.get('성명', '')
+                person_certs = [c for c in (all_certs_tab1 or []) if c.get('소유자명') == person_name]
+
+>>>>>>> origin/claude/fix-dashboard-ui-AKgMs
                 if person_certs:
                     cert_data = []
                     for cert in person_certs:
@@ -134,12 +155,23 @@ with tab2:
         filtered_personnel = [p for p in filtered_personnel if p.get('직책') == role_filter]
     
     st.caption(f'투입가능 인원: {len(filtered_personnel)}명')
+<<<<<<< HEAD
     
+=======
+
+    # 자격증 목록을 루프 밖에서 1회만 호출 (N+1 방지)
+    all_certs_tab2, _ = get_certificates()
+
+>>>>>>> origin/claude/fix-dashboard-ui-AKgMs
     # 인원별 상세 정보 표시
     for person in filtered_personnel:
         with st.expander(f"{person.get('성명', '-')} ({person.get('인력ID', '-')}) - {person.get('직책', '-')}", expanded=False):
             col_info, col_certs = st.columns([1, 1])
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> origin/claude/fix-dashboard-ui-AKgMs
             with col_info:
                 st.markdown('**인원 정보**')
                 st.write(f"**인력ID**: {person.get('인력ID', '-')}")
@@ -155,6 +187,7 @@ with tab2:
                 st.write(f"**등록일**: {person.get('등록일', '-')}")
                 if person.get('비고'):
                     st.write(f"**비고**: {person.get('비고')}")
+<<<<<<< HEAD
             
             with col_certs:
                 st.markdown('**보유 자격증**')
@@ -163,6 +196,15 @@ with tab2:
                 certs_list, _ = get_certificates()
                 person_certs = [c for c in (certs_list or []) if c.get('소유자명') == person_name]
                 
+=======
+
+            with col_certs:
+                st.markdown('**보유 자격증**')
+                # 해당 인원의 자격증 찾기 (소유자명으로 매칭, 전체 목록 재사용)
+                person_name = person.get('성명', '')
+                person_certs = [c for c in (all_certs_tab2 or []) if c.get('소유자명') == person_name]
+
+>>>>>>> origin/claude/fix-dashboard-ui-AKgMs
                 if person_certs:
                     cert_data = []
                     for cert in person_certs:
