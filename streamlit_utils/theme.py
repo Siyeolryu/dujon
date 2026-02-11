@@ -546,6 +546,110 @@ section[data-testid="stSidebar"] .stButton > button {
         grid-template-columns: 1fr;
     }
 }
+
+/* ========== 빠른 액션 버튼 ========== */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.quick-action-btn {
+    display: block;
+    padding: 20px 16px;
+    background: #fff;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    text-align: center;
+    text-decoration: none;
+    color: #1a1d21;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.quick-action-btn:hover {
+    border-color: #3b82f6;
+    background: #f0f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+/* ========== 정보 카드 ========== */
+.info-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+}
+.info-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1d21;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f1f3f5;
+}
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+.info-row:last-child {
+    border-bottom: none;
+}
+.info-label {
+    font-size: 14px;
+    color: #6b7280;
+}
+.info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1d21;
+}
+.info-footer-link {
+    display: inline-block;
+    margin-top: 12px;
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+.info-footer-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* ========== KPI 트렌드 & 스파크라인 ========== */
+.kpi-trend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 8px;
+}
+.kpi-sparkline {
+    margin-top: 12px;
+    height: 40px;
+}
+.kpi-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+/* ========== 반응형: 빠른 액션 ========== */
+@media (max-width: 768px) {
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 480px) {
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 """
 
