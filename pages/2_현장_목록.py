@@ -21,6 +21,7 @@ from streamlit_utils.api_client import (
 from streamlit_utils.theme import apply_localhost_theme
 from streamlit_utils.components import render_status_badge
 from streamlit_utils.export import render_quick_export_buttons, prepare_sites_export
+from streamlit_utils.advanced_components import render_confirm_dialog, render_error_fallback
 
 apply_localhost_theme()
 
@@ -282,7 +283,13 @@ else:
         total_count = 0
 
 if err:
-    st.error(f'데이터 로드 실패: {err}')
+    if render_error_fallback(
+        error_message=str(err),
+        help_text="Flask API 서버가 실행 중인지 확인하세요: python run_api.py",
+        key="sites_load_error",
+    ):
+        clear_sites_cache()
+        st.rerun()
     st.stop()
 
 if not sites:
@@ -509,7 +516,7 @@ with st.expander('빠른 액션 (행별 배정·해제·상세)', expanded=False
         with ac2:
             if row['배정상태'] == '배정완료':
                 if st.button('해제', key=f'unassign_{site_id}', use_container_width=True):
-                    detail, _ = get_site(site_id)
+                    detail, _ = get_site_cached(site_id)
                     version = detail.get('version', '') if detail else ''
                     _, err = unassign_site(site_id, version=version or None)
                     if err:
@@ -540,7 +547,7 @@ if st.session_state.selected_site_id and not st.session_state.show_assign_modal:
     st.markdown('---')
     st.subheader('현장 상세 정보')
     
-    detail, err = get_site(st.session_state.selected_site_id)
+    detail, err = get_site_cached(st.session_state.selected_site_id)
     if err and not detail:
         st.error(err)
     elif detail:

@@ -1,10 +1,12 @@
 """
 고급 UI 컴포넌트 - Streamlit 최적화
-스마트 KPI 카드, 인터랙티브 테이블, 스마트 폼
+스마트 KPI 카드, 인터랙티브 테이블, 스마트 폼,
+확인 다이얼로그, 로딩 스피너, 토스트 알림, 에러 폴백 UI
 """
 import streamlit as st
 from typing import List, Dict, Any, Optional, Tuple
 import plotly.graph_objects as go
+from streamlit_utils.design_tokens import T
 
 
 def render_smart_kpi_card(
@@ -383,3 +385,203 @@ def render_empty_state(
     '''
     
     st.markdown(empty_html, unsafe_allow_html=True)
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 확인 다이얼로그 · 로딩 · 토스트 · 에러 폴백
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def render_confirm_dialog(
+    title: str,
+    message: str,
+    confirm_label: str = "확인",
+    cancel_label: str = "취소",
+    dialog_type: str = "warning",
+    key: str = "confirm_dialog",
+) -> Optional[bool]:
+    """확인/취소 다이얼로그.
+
+    Returns:
+        True  → 사용자가 '확인' 클릭
+        False → 사용자가 '취소' 클릭
+        None  → 아직 선택하지 않음
+    """
+    colors = {
+        "warning": {"bg": T.STATUS_WARNING_BG, "border": T.STATUS_WARNING, "text": T.STATUS_WARNING_TEXT, "icon": "⚠️"},
+        "danger":  {"bg": T.STATUS_DANGER_BG,  "border": T.STATUS_DANGER,  "text": T.STATUS_DANGER_TEXT,  "icon": "🚨"},
+        "info":    {"bg": T.STATUS_INFO_BG,    "border": T.STATUS_INFO,    "text": T.STATUS_INFO_TEXT,    "icon": "ℹ️"},
+    }
+    c = colors.get(dialog_type, colors["warning"])
+
+    st.markdown(f'''
+    <div style="
+        background:{c['bg']}; border-left:4px solid {c['border']};
+        padding:20px; border-radius:{T.RADIUS_MD}; margin:16px 0;
+    ">
+        <div style="font-size:18px; font-weight:{T.FONT_WEIGHT_SEMIBOLD}; color:{c['text']}; margin-bottom:8px;">
+            {c['icon']} {title}
+        </div>
+        <div style="font-size:{T.FONT_SIZE_BASE}; color:{c['text']};">
+            {message}
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([2, 1, 1])
+    with col2:
+        if st.button(cancel_label, key=f"{key}_cancel", use_container_width=True):
+            return False
+    with col3:
+        if st.button(confirm_label, key=f"{key}_confirm", type="primary", use_container_width=True):
+            return True
+    return None
+
+
+def render_loading_card(message: str = "데이터를 불러오는 중입니다...") -> None:
+    """스켈레톤 느낌의 로딩 카드."""
+    st.markdown(f'''
+    <div style="
+        text-align:center; padding:48px 20px;
+        background:{T.BG_HOVER}; border-radius:{T.RADIUS_LG};
+        margin:24px 0;
+    ">
+        <div style="
+            width:40px; height:40px; margin:0 auto 16px auto;
+            border:4px solid {T.BORDER_DEFAULT};
+            border-top-color:{T.COLOR_PRIMARY};
+            border-radius:50%;
+            animation:spin 0.8s linear infinite;
+        "></div>
+        <div style="font-size:{T.FONT_SIZE_BASE}; color:{T.TEXT_MUTED};">
+            {message}
+        </div>
+    </div>
+    <style>@keyframes spin {{ 0% {{ transform:rotate(0deg) }} 100% {{ transform:rotate(360deg) }} }}</style>
+    ''', unsafe_allow_html=True)
+
+
+def render_toast(
+    message: str,
+    toast_type: str = "success",
+    duration_ms: int = 3000,
+    key: str = "toast",
+) -> None:
+    """자동 사라지는 토스트 알림 (CSS animation 기반).
+
+    Args:
+        message: 표시할 메시지
+        toast_type: 'success' | 'danger' | 'warning' | 'info'
+        duration_ms: 표시 시간 (ms)
+        key: 고유 키
+    """
+    color_map = {
+        "success": (T.STATUS_SUCCESS, T.STATUS_SUCCESS_BG, T.STATUS_SUCCESS_TEXT, "✅"),
+        "danger":  (T.STATUS_DANGER,  T.STATUS_DANGER_BG,  T.STATUS_DANGER_TEXT,  "❌"),
+        "warning": (T.STATUS_WARNING, T.STATUS_WARNING_BG, T.STATUS_WARNING_TEXT, "⚠️"),
+        "info":    (T.STATUS_INFO,    T.STATUS_INFO_BG,    T.STATUS_INFO_TEXT,    "ℹ️"),
+    }
+    border, bg, text, icon = color_map.get(toast_type, color_map["info"])
+
+    st.markdown(f'''
+    <style>
+    @keyframes toast_slide_{key} {{
+        0% {{ transform:translateX(100%); opacity:0 }}
+        10% {{ transform:translateX(0); opacity:1 }}
+        90% {{ transform:translateX(0); opacity:1 }}
+        100% {{ transform:translateX(100%); opacity:0 }}
+    }}
+    </style>
+    <div style="
+        position:fixed; top:20px; right:20px; z-index:10000;
+        padding:14px 20px; border-radius:{T.RADIUS_MD};
+        background:{bg}; border-left:4px solid {border};
+        color:{text}; font-size:{T.FONT_SIZE_BASE}; font-weight:{T.FONT_WEIGHT_MEDIUM};
+        box-shadow:{T.SHADOW_LG};
+        animation:toast_slide_{key} {duration_ms}ms ease forwards;
+        pointer-events:none;
+    ">
+        {icon} {message}
+    </div>
+    ''', unsafe_allow_html=True)
+
+
+def render_error_fallback(
+    error_message: str,
+    retry_label: str = "다시 시도",
+    help_text: str = "",
+    key: str = "error_fallback",
+) -> bool:
+    """API 실패 등 에러 시 표시하는 폴백 UI.
+
+    Returns:
+        True if 사용자가 '다시 시도' 클릭
+    """
+    st.markdown(f'''
+    <div style="
+        text-align:center; padding:48px 20px;
+        background:{T.STATUS_DANGER_BG}; border-radius:{T.RADIUS_LG};
+        border:1px solid {T.STATUS_DANGER}20; margin:24px 0;
+    ">
+        <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
+        <div style="font-size:{T.FONT_SIZE_MD}; font-weight:{T.FONT_WEIGHT_SEMIBOLD}; color:{T.STATUS_DANGER_TEXT}; margin-bottom:8px;">
+            문제가 발생했습니다
+        </div>
+        <div style="font-size:{T.FONT_SIZE_SM}; color:{T.STATUS_DANGER_TEXT}; margin-bottom:4px;">
+            {error_message}
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    if help_text:
+        st.caption(help_text)
+
+    return st.button(f"🔄 {retry_label}", key=key, type="primary")
+
+
+def render_status_pill(status: str, domain: str = "assignment") -> str:
+    """상태값을 디자인 토큰 기반 HTML 필 배지로 반환.
+
+    Args:
+        status: '배정완료', '투입가능' 등
+        domain: 'assignment' | 'site_state' | 'personnel' | 'certificate'
+
+    Returns:
+        HTML string (st.markdown unsafe_allow_html 필요)
+    """
+    c = T.status_color(status, domain)
+    return (
+        f'<span style="display:inline-block; padding:4px 10px; border-radius:{T.RADIUS_PILL};'
+        f' font-size:{T.FONT_SIZE_XS}; font-weight:{T.FONT_WEIGHT_MEDIUM};'
+        f' background:{c["bg"]}; color:{c["text"]};">{status}</span>'
+    )
+
+
+def render_data_table_header(
+    title: str,
+    total_count: int,
+    filter_summary: str = "",
+) -> None:
+    """데이터 테이블 상단 헤더 (건수 표시 + 필터 요약)."""
+    filter_html = ""
+    if filter_summary:
+        filter_html = f'<span style="font-size:{T.FONT_SIZE_SM}; color:{T.TEXT_MUTED}; margin-left:12px;">{filter_summary}</span>'
+
+    st.markdown(f'''
+    <div style="
+        display:flex; align-items:baseline; justify-content:space-between;
+        margin-bottom:16px; padding-bottom:12px;
+        border-bottom:2px solid {T.BORDER_LIGHT};
+    ">
+        <div>
+            <span style="font-size:{T.FONT_SIZE_LG}; font-weight:{T.FONT_WEIGHT_SEMIBOLD}; color:{T.TEXT_HEADING};">
+                {title}
+            </span>
+            <span style="
+                display:inline-block; margin-left:8px; padding:2px 10px;
+                border-radius:{T.RADIUS_PILL}; background:{T.STATUS_INFO_BG};
+                font-size:{T.FONT_SIZE_XS}; font-weight:{T.FONT_WEIGHT_SEMIBOLD}; color:{T.STATUS_INFO_TEXT};
+            ">{total_count}건</span>
+            {filter_html}
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)

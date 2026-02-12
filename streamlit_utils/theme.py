@@ -650,6 +650,95 @@ section[data-testid="stSidebar"] .stButton > button {
         grid-template-columns: 1fr;
     }
 }
+
+/* ========== 접근성: 스크린리더 전용 텍스트 ========== */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ========== 접근성: 고대비 포커스 링 ========== */
+:focus-visible {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 2px !important;
+}
+
+/* ========== 접근성: 모션 줄이기 ========== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ========== 다크모드 기반 (Streamlit 테마 연동) ========== */
+@media (prefers-color-scheme: dark) {
+    [data-testid="stAppViewContainer"] {
+        background-color: #1a1d23;
+        color: #e0e0e0;
+    }
+    [data-testid="stHeader"] {
+        background: #22252b;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+    [data-testid="column"],
+    section[data-testid="stSidebar"] > div {
+        background: #22252b;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    section[data-testid="stSidebar"] {
+        background: #22252b;
+    }
+    [data-testid="stAppViewContainer"] h1,
+    [data-testid="stAppViewContainer"] h2,
+    [data-testid="stAppViewContainer"] h3 {
+        color: #f0f0f0 !important;
+    }
+    [data-testid="stMetricValue"] { color: #f0f0f0 !important; }
+    [data-testid="stMetricLabel"] { color: #9ca3af !important; }
+    [data-testid="stDataFrame"] thead tr { background: #2a2d35 !important; }
+    [data-testid="stDataFrame"] th { background: #2a2d35 !important; color: #c0c0c0 !important; border-bottom-color: #3a3d45 !important; box-shadow: 0 1px 0 #3a3d45 !important; }
+    [data-testid="stDataFrame"] td { color: #d0d0d0 !important; border-bottom-color: #2a2d35 !important; }
+    [data-testid="stDataFrame"] tbody tr:hover { background: #2a2d35 !important; }
+    [data-testid="stTextInput"] input,
+    [data-testid="stSelectbox"] div,
+    .stSelectbox > div > div {
+        background: #2a2d35 !important;
+        border-color: #3a3d45 !important;
+        color: #e0e0e0 !important;
+    }
+    .kpi-card { background: #22252b; }
+    .kpi-value { color: #f0f0f0; }
+    .kpi-label { color: #9ca3af; }
+    .info-card { background: #22252b; }
+    .info-card-title { color: #f0f0f0; border-bottom-color: #3a3d45; }
+    .info-label { color: #9ca3af; }
+    .info-value { color: #f0f0f0; }
+    .info-row { border-bottom-color: #2a2d35; }
+    .quick-action-btn { background: #22252b; border-color: #3a3d45; color: #e0e0e0 !important; }
+    .quick-action-btn:hover { background: #2a2d35; border-color: #3b82f6; }
+    hr { border-color: #3a3d45 !important; }
+    .nav-btn-secondary { background: #22252b; color: #c0c0c0 !important; border-color: #3a3d45; }
+}
+
+/* ========== 터치 타겟 최소 크기 (WCAG 2.5.5) ========== */
+@media (pointer: coarse) {
+    [data-testid="stButton"] button,
+    [data-testid="stRadio"] > div > label,
+    .nav-btn, .quick-action-btn, .kpi-link-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
 </style>
 """
 
@@ -677,10 +766,12 @@ def render_top_nav(current_page=None):
     Streamlit 파일명 기반 URL: 2_현장_목록.py → /2_현장_목록
     """
     home_class = "active" if current_page is None else ""
-    parts = [f'<a href="/" class="{home_class}">홈</a>']
+    home_aria = ' aria-current="page"' if current_page is None else ""
+    parts = [f'<a href="/" class="{home_class}"{home_aria}>홈</a>']
     for label, path in NAV_LINKS:
         link_class = "active" if current_page == path else ""
-        parts.append(f'<a href="/{path}" class="{link_class}">{label}</a>')
+        aria = ' aria-current="page"' if current_page == path else ""
+        parts.append(f'<a href="/{path}" class="{link_class}"{aria}>{label}</a>')
     nav_items = "\n        ".join(parts)
     st.markdown(f"""
     <style>
@@ -720,7 +811,7 @@ def render_top_nav(current_page=None):
         color: #fff !important;
     }}
     </style>
-    <nav class="top-nav">
+    <nav class="top-nav" role="navigation" aria-label="메인 내비게이션">
         {nav_items}
     </nav>
     """, unsafe_allow_html=True)

@@ -1,22 +1,25 @@
 """
-대시보드 - 통계 요약 및 시각화 (임원용)
-KPI 카드 + 배정/현장상태/인력 차트 (API/Supabase 연동)
-Modern UI: 호버 효과, 반응형 그리드, 버튼 스타일 네비게이션
+대시보드 - 임원용 현황 관리
+배정 관리 중심 설계: 미배정/배정완료, 소장 관리, 현장 현황
 """
 import os
 import streamlit as st
-from streamlit_utils.cached_api import check_api_connection_cached, get_stats_cached
+from streamlit_utils.cached_api import (
+    check_api_connection_cached,
+    get_stats_cached,
+    get_personnel_cached,
+)
 
 from streamlit_utils.theme import apply_localhost_theme
 from streamlit_utils.components import (
     render_kpi_card,
     render_kpi_grid_start,
     render_kpi_grid_end,
-    render_section_header,
 )
 
 apply_localhost_theme()
-st.title("대시보드")
+st.title("📊 임원 대시보드")
+st.caption("현장 배정 및 소장 관리 현황")
 
 
 def _normalize_stats(raw):
@@ -80,7 +83,7 @@ if not is_connected and api_mode != 'supabase':
     1. **Flask 서버 실행**: 터미널에서 `python run_api.py` 실행
     2. **환경 변수 확인**: `.env`에 `API_BASE_URL=http://localhost:5000/api` 확인
     3. **Supabase 사용 시**: `API_MODE=supabase` 및 Supabase 키 설정 후 재시도
-
+    
     아래 대시보드는 데이터 없음(0)으로 표시됩니다.
     """
     )
@@ -91,8 +94,8 @@ stats = _normalize_stats(raw_stats)
 if stats_err and (is_connected or api_mode == 'supabase'):
     st.warning(f"통계 조회 실패: {stats_err}. 0으로 표시합니다.")
 
-# ========== 상단 KPI 카드 그리드 ==========
-st.markdown("### 현황 요약")
+# ========== 상단 KPI 카드 그리드 (핵심 지표) ==========
+st.markdown("### 📌 핵심 현황")
 
 render_kpi_grid_start()
 
@@ -109,138 +112,304 @@ render_kpi_card(
 render_kpi_card(
     label="미배정",
     value=stats["unassigned"],
-    link_text="미배정 보기",
-    link_url="/현장_목록",
-    status_class="danger" if stats["unassigned"] > 0 else "",
+    link_text="즉시 배정",
+    link_url="/현장_목록?status=미배정",
+    status_class="danger" if stats["unassigned"] > 0 else "success",
 )
 
 # 배정완료 (성공 표시)
 render_kpi_card(
     label="배정완료",
     value=stats["assigned"],
-    link_text="배정완료 보기",
-    link_url="/현장_목록",
+    link_text="배정 현황",
+    link_url="/현장_목록?status=배정완료",
     status_class="success" if stats["assigned"] > 0 else "",
 )
 
 # 투입가능 인원
 render_kpi_card(
     label="투입가능 인원",
-    value=f"{stats['available_personnel']}",
+    value=f"{stats['available_personnel']}명",
     link_text="인원 상세",
     link_url="/투입가능인원_상세",
     status_class="info",
     sublabel=f"전체 {stats['total_personnel']}명 중",
 )
 
-# 사용가능 자격증
-render_kpi_card(
-    label="사용가능 자격증",
-    value=stats["available_certificates"],
-    status_class="info",
-    sublabel=f"전체 {stats['total_certificates']}개 중",
-)
-
-# 전체 자격증
-render_kpi_card(
-    label="전체 자격증",
-    value=stats["total_certificates"],
-)
-
 render_kpi_grid_end()
 
 # 미배정 5건 이상 시 경고
 if stats["unassigned"] >= 5 and (is_connected or api_mode == 'supabase'):
-    st.warning("⚠️ 미배정 현장이 5건 이상입니다. 현장 목록에서 배정을 진행해 주세요.")
+    st.error("🚨 **긴급**: 미배정 현장이 5건 이상입니다. 즉시 배정이 필요합니다!")
+    st.markdown("[현장 목록에서 배정하기](/현장_목록?status=미배정)")
 
 st.markdown("---")
 
-# ========== 2단 레이아웃: 좌 현장 현황 / 우 인력·자격증 ==========
-left_col, right_col = st.columns(2)
+# ========== 병렬 3단 레이아웃: 배정 현황 / 소장 관리 / 현장 현황 ==========
+st.markdown("### 📊 상세 현황")
 
-with left_col:
+col_assignment, col_directors, col_sites = st.columns(3)
+
+# ==================== 1. 배정 현황 섹션 ====================
+with col_assignment:
     st.markdown("#### 배정 현황")
+    
     total = stats["total_sites"]
     assigned = stats["assigned"]
     unassigned = stats["unassigned"]
-
-    if total == 0:
-        st.info("표시할 현장 데이터가 없습니다.")
-    else:
+    
+    # 배정률 계산
+    assignment_rate = int(assigned / total * 100) if total > 0 else 0
+    
+    # 요약 카드
+    st.markdown(f"""
+    <div class="info-card">
+        <div class="info-row">
+            <span class="info-label">배정률</span>
+            <span class="info-value" style="color: {'#10b981' if assignment_rate >= 80 else '#f59e0b' if assignment_rate >= 50 else '#ef4444'}; font-size: 28px; font-weight: 800;">{assignment_rate}%</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">배정완료</span>
+            <span class="info-value" style="color: #10b981;">{assigned}개</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">미배정</span>
+            <span class="info-value" style="color: #ef4444;">{unassigned}개</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 도넛 차트
+    if total > 0:
         try:
             import plotly.graph_objects as go
-
-            fig_bar = go.Figure(
+            
+            fig_donut = go.Figure(
                 data=[
-                    go.Bar(
-                        name="배정완료",
-                        x=assign_labels,
-                        y=assign_values,
-                        marker_color=[
-                            CHART_COLORS["danger"] if lb == "미배정" else CHART_COLORS["success"]
-                            for lb in assign_labels
-                        ],
-                        text=assign_values,
-                        textposition="outside",
-                        textfont=dict(size=14, color="#1a1d21", family="Pretendard"),
+                    go.Pie(
+                        labels=["배정완료", "미배정"],
+                        values=[assigned, unassigned],
+                        hole=0.5,
+                        marker=dict(
+                            colors=[CHART_COLORS["success"], CHART_COLORS["danger"]]
+                        ),
+                        textinfo="label+percent",
+                        textfont=dict(size=12),
+                        hovertemplate="<b>%{label}</b><br>%{value}개<br>%{percent}<extra></extra>",
                     )
                 ],
             )
-            fig_bar.update_layout(
-                title=dict(
-                    text="배정 현황",
+            fig_donut.update_layout(
+                annotations=[
+                    dict(
+                        text=f"{assignment_rate}%",
+                        x=0.5,
+                        y=0.5,
+                        font_size=24,
+                        font_color="#1a1d21",
+                        font_weight=700,
+                        showarrow=False,
+                    )
+                ],
+                height=280,
+                margin=dict(t=20, b=20, l=20, r=20),
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.15,
                     xanchor="center",
                     x=0.5,
+                ),
+                paper_bgcolor="rgba(0,0,0,0)",
+            )
+            st.plotly_chart(fig_donut, use_container_width=True, key="dashboard_assignment_donut")
+        except ImportError:
+            st.warning("Plotly가 설치되지 않았습니다.")
+        except Exception as e:
+            st.warning(f"차트 오류: {e}")
+    else:
+        st.info("현장 데이터가 없습니다.")
+    
+    # 빠른 액션
+    st.markdown("""
+    <a href="/현장_목록" class="nav-btn nav-btn-primary" style="display: inline-block; margin-top: 12px; width: 100%;">
+        현장 목록 보기
+    </a>
+    """, unsafe_allow_html=True)
+
+# ==================== 2. 소장 관리 섹션 ====================
+with col_directors:
+    st.markdown("#### 소장 관리")
+    
+    # 인력 데이터 가져오기
+    personnel, pers_err = get_personnel_cached()
+    
+    if pers_err:
+        st.error(f"인력 데이터 조회 실패: {pers_err}")
+        directors = []
+    else:
+        # 소장만 필터링
+        directors = [p for p in (personnel or []) if p.get('직책') == '소장']
+    
+    # 상태별 집계
+    available_directors = [d for d in directors if d.get('현재상태') == '투입가능']
+    deployed_directors = [d for d in directors if d.get('현재상태') == '투입중']
+    
+    total_directors = len(directors)
+    available_count = len(available_directors)
+    deployed_count = len(deployed_directors)
+    
+    # 요약 카드
+    st.markdown(f"""
+    <div class="info-card">
+        <div class="info-row">
+            <span class="info-label">전체 소장</span>
+            <span class="info-value">{total_directors}명</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">배정가능</span>
+            <span class="info-value" style="color: #10b981;">{available_count}명</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">배정중</span>
+            <span class="info-value" style="color: #3b82f6;">{deployed_count}명</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 소장별 담당 현장 수 막대 차트
+    if directors:
+        # 소장별 담당 현장 수 계산
+        director_data = []
+        for d in directors:
+            name = d.get('성명', '이름없음')
+            workload = d.get('현재담당현장수', 0)
+            director_data.append({
+                'name': name,
+                'workload': workload,
+            })
+        
+        # 담당 현장 수로 정렬 (내림차순)
+        director_data = sorted(director_data, key=lambda x: x['workload'], reverse=True)
+        
+        # 상위 5명만 표시
+        top_directors = director_data[:5]
+        director_names = [d['name'] for d in top_directors]
+        director_counts = [d['workload'] for d in top_directors]
+        
+        # 색상: 담당 현장 수에 따라
+        colors = [
+            "#6b7280" if count == 0 else "#10b981" if count <= 2 else "#f59e0b"
+            for count in director_counts
+        ]
+        
+        try:
+            import plotly.graph_objects as go
+            
+            fig_directors = go.Figure(
+                data=[
+                    go.Bar(
+                        x=director_counts,
+                        y=director_names,
+                        orientation="h",
+                        marker_color=colors,
+                        text=director_counts,
+                        textposition="outside",
+                        textfont=dict(size=12),
+                        hovertemplate="<b>%{y}</b><br>담당 현장: %{x}개<extra></extra>",
+                    )
+                ],
+            )
+            fig_directors.update_layout(
+                title=dict(
+                    text="소장별 담당 현장 수 (Top 5)",
                     font=dict(size=12),
                 ),
-                margin=dict(t=50, b=40, l=40, r=40),
-                height=300,
+                xaxis_title="현장 수",
+                height=max(250, len(director_names) * 50),
+                margin=dict(t=50, b=40, l=100, r=40),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(size=13, color="#495057"),
                 xaxis=dict(
-                    tickfont=dict(size=13),
-                    showgrid=False,
+                    gridcolor="#f1f3f5",
                 ),
                 yaxis=dict(
-                    title="건수",
-                    title_font=dict(size=13),
-                    gridcolor="#f1f3f5",
-                    gridwidth=1,
+                    tickfont=dict(size=11),
                 ),
             )
-            st.plotly_chart(fig_bar, use_container_width=True, key="dashboard_assign_bar")
+            st.plotly_chart(fig_directors, use_container_width=True, key="dashboard_directors_bar")
         except ImportError:
-            st.warning("Plotly가 설치되지 않았습니다. `pip install plotly` 실행 후 다시 시도해주세요.")
+            st.warning("Plotly가 설치되지 않았습니다.")
         except Exception as e:
-            st.warning(f"차트를 그리지 못했습니다: {e}")
+            st.warning(f"차트 오류: {e}")
+    else:
+        st.info("소장 데이터가 없습니다.")
+    
+    # 빠른 액션
+    st.markdown("""
+    <a href="/투입가능인원_상세" class="nav-btn nav-btn-secondary" style="display: inline-block; margin-top: 12px; width: 100%;">
+        소장 상세 보기
+    </a>
+    """, unsafe_allow_html=True)
 
-    st.markdown("#### 현장상태별 현황")
+# ==================== 3. 현장 현황 섹션 ====================
+with col_sites:
+    st.markdown("#### 현장 현황")
+    
+    # 현장 상태별 집계
     by_state = {}
     if raw_stats and isinstance(raw_stats, dict) and "sites" in raw_stats:
         by_state = (raw_stats.get("sites") or {}).get("by_state") or {}
+    
     state_order = ["건축허가", "착공예정", "공사 중", "공사 중단", "준공"]
+    
+    # 요약 카드
+    st.markdown(f"""
+    <div class="info-card">
+        <div class="info-row">
+            <span class="info-label">건축허가</span>
+            <span class="info-value">{by_state.get('건축허가', 0)}개</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">착공예정</span>
+            <span class="info-value" style="color: #3b82f6;">{by_state.get('착공예정', 0)}개</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">공사 중</span>
+            <span class="info-value" style="color: #f59e0b;">{by_state.get('공사 중', 0)}개</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">공사 중단</span>
+            <span class="info-value" style="color: #ef4444;">{by_state.get('공사 중단', 0)}개</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">준공</span>
+            <span class="info-value" style="color: #10b981;">{by_state.get('준공', 0)}개</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 현장 상태별 막대 차트
     state_labels = [s for s in state_order if by_state.get(s, 0) > 0]
-    state_labels += [k for k in sorted(by_state.keys()) if k not in state_order]
+    state_labels += [k for k in sorted(by_state.keys()) if k not in state_order and by_state.get(k, 0) > 0]
     state_values = [by_state.get(lb, 0) for lb in state_labels]
-
+    
     # 상태별 색상 매핑
-    state_colors = {
+    state_colors_map = {
         "건축허가": "#6b7280",
         "착공예정": "#3b82f6",
         "공사 중": "#f59e0b",
         "공사 중단": "#ef4444",
         "준공": "#10b981",
     }
-
-    if not state_labels:
-        st.caption("현장상태 데이터가 없습니다.")
-    else:
+    
+    if state_labels:
         try:
             import plotly.graph_objects as go
-
-            bar_colors = [state_colors.get(s, CHART_COLORS["primary"]) for s in state_labels]
-
+            
+            bar_colors = [state_colors_map.get(s, CHART_COLORS["primary"]) for s in state_labels]
+            
             fig_state = go.Figure(
                 data=[
                     go.Bar(
@@ -250,36 +419,52 @@ with left_col:
                         marker_color=bar_colors,
                         text=state_values,
                         textposition="outside",
-                        textfont=dict(size=13, color="#1a1d21"),
+                        textfont=dict(size=12),
+                        hovertemplate="<b>%{y}</b><br>현장 수: %{x}개<extra></extra>",
                     )
                 ],
             )
             fig_state.update_layout(
-                margin=dict(t=24, b=40, l=100, r=40),
-                height=max(220, len(state_labels) * 45),
+                title=dict(
+                    text="현장 상태별 현황",
+                    font=dict(size=12),
+                ),
+                xaxis_title="현장 수",
+                height=max(250, len(state_labels) * 50),
+                margin=dict(t=50, b=40, l=100, r=40),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(size=13, color="#495057"),
                 xaxis=dict(
-                    title="건수",
-                    title_font=dict(size=13),
                     gridcolor="#f1f3f5",
                 ),
                 yaxis=dict(
-                    tickfont=dict(size=13),
-                    autorange="reversed",
+                    tickfont=dict(size=11),
                 ),
             )
             st.plotly_chart(fig_state, use_container_width=True, key="dashboard_state_bar")
         except ImportError:
             st.warning("Plotly가 설치되지 않았습니다.")
         except Exception as e:
-            st.warning(f"현장상태 차트 오류: {e}")
+            st.warning(f"차트 오류: {e}")
+    else:
+        st.info("현장 상태 데이터가 없습니다.")
+    
+    # 빠른 액션
+    st.markdown("""
+    <a href="/현장등록" class="nav-btn nav-btn-success" style="display: inline-block; margin-top: 12px; width: 100%;">
+        새 현장 등록
+    </a>
+    """, unsafe_allow_html=True)
 
-with right_col:
+st.markdown("---")
+
+# ========== 하단: 인력 및 자격증 요약 ==========
+st.markdown("### 📈 인력 및 자격증")
+
+summary_col1, summary_col2 = st.columns(2)
+
+with summary_col1:
     st.markdown("#### 인력 현황")
-
-    # 인력 현황 요약 카드
     st.markdown(f"""
     <div class="info-card">
         <div class="info-row">
@@ -292,66 +477,23 @@ with right_col:
         </div>
         <div class="info-row">
             <span class="info-label">투입중</span>
-            <span class="info-value" style="color: #f59e0b;">{stats.get('deployed_personnel', 0)}명</span>
+            <span class="info-value" style="color: #3b82f6;">{stats.get('deployed_personnel', 0)}명</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # 버튼 스타일 링크
-    st.markdown("""
-    <a href="/투입가능인원_상세" class="nav-btn nav-btn-primary" style="display: inline-block; margin-top: 8px;">
-        투입가능인원 상세 보기
-    </a>
-    """, unsafe_allow_html=True)
-
-    st.markdown("#### 직책별 인원")
+    
+    # 직책별 인원 (간략 표시)
     by_role = {}
     if raw_stats and isinstance(raw_stats, dict) and "personnel" in raw_stats:
         by_role = (raw_stats.get("personnel") or {}).get("by_role") or {}
-    role_labels = sorted(by_role.keys()) if by_role else []
-    role_values = [by_role.get(r, 0) for r in role_labels]
+    
+    if by_role:
+        st.caption("**직책별 인원**")
+        role_text = " | ".join([f"{role}: {count}명" for role, count in sorted(by_role.items())])
+        st.caption(role_text)
 
-    if not role_labels:
-        st.caption("직책별 데이터가 없습니다.")
-    else:
-        try:
-            import plotly.graph_objects as go
-
-            fig_role = go.Figure(
-                data=[
-                    go.Bar(
-                        x=role_labels,
-                        y=role_values,
-                        marker_color=CHART_COLORS["primary"],
-                        text=role_values,
-                        textposition="outside",
-                        textfont=dict(size=13, color="#1a1d21"),
-                    )
-                ],
-            )
-            fig_role.update_layout(
-                margin=dict(t=24, b=70, l=40, r=40),
-                height=max(250, len(role_labels) * 50),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(size=13, color="#495057"),
-                xaxis=dict(
-                    tickangle=-30,
-                    tickfont=dict(size=12),
-                ),
-                yaxis=dict(
-                    title="인원",
-                    title_font=dict(size=13),
-                    gridcolor="#f1f3f5",
-                ),
-            )
-            st.plotly_chart(fig_role, use_container_width=True, key="dashboard_role_bar")
-        except ImportError:
-            st.warning("Plotly가 설치되지 않았습니다.")
-        except Exception as e:
-            st.warning(f"직책별 차트 오류: {e}")
-
-    st.markdown("#### 자격증 요약")
+with summary_col2:
+    st.markdown("#### 자격증 현황")
     st.markdown(f"""
     <div class="info-card">
         <div class="info-row">
@@ -368,10 +510,15 @@ with right_col:
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # 사용률
+    cert_usage_rate = int((stats['total_certificates'] - stats['available_certificates']) / stats['total_certificates'] * 100) if stats['total_certificates'] > 0 else 0
+    st.caption(f"**자격증 사용률**: {cert_usage_rate}%")
 
-# ========== 하단: 빠른 액션 ==========
 st.markdown("---")
-st.markdown("### 빠른 액션")
+
+# ========== 빠른 액션 (하단) ==========
+st.markdown("### ⚡ 빠른 액션")
 
 st.markdown("""
 <div class="quick-actions">
