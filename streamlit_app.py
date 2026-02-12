@@ -2,6 +2,7 @@
 현장배정 관리 시스템 - Streamlit 메인 진입점
 GitHub/Streamlit Cloud에서 Main file path: streamlit_app.py
 pages/ 폴더의 한글 페이지 파일들을 자동으로 사이드바에 표시합니다.
+Updated: 2026-02-12 - Added openpyxl dependency for Excel export
 """
 import os
 import streamlit as st
