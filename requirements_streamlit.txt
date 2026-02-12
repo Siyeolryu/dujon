@@ -9,3 +9,4 @@ plotly>=5.17.0
 
 # Supabase (API_MODE=supabase일 때 필수)
 supabase>=2.0.0
+openpyxl>=3.1.2
