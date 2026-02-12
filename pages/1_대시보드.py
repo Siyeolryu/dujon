@@ -104,7 +104,7 @@ render_kpi_card(
     label="전체 현장",
     value=stats["total_sites"],
     link_text="현장 목록",
-    link_url="/현장_목록",
+    link_url="/2_현장_목록",
     status_class="info",
 )
 
@@ -113,7 +113,7 @@ render_kpi_card(
     label="미배정",
     value=stats["unassigned"],
     link_text="즉시 배정",
-    link_url="/현장_목록?status=미배정",
+    link_url="/2_현장_목록",
     status_class="danger" if stats["unassigned"] > 0 else "success",
 )
 
@@ -122,7 +122,7 @@ render_kpi_card(
     label="배정완료",
     value=stats["assigned"],
     link_text="배정 현황",
-    link_url="/현장_목록?status=배정완료",
+    link_url="/2_현장_목록",
     status_class="success" if stats["assigned"] > 0 else "",
 )
 
@@ -131,7 +131,7 @@ render_kpi_card(
     label="투입가능 인원",
     value=f"{stats['available_personnel']}명",
     link_text="인원 상세",
-    link_url="/투입가능인원_상세",
+    link_url="/8_투입가능인원_상세",
     status_class="info",
     sublabel=f"전체 {stats['total_personnel']}명 중",
 )
@@ -141,7 +141,7 @@ render_kpi_grid_end()
 # 미배정 5건 이상 시 경고
 if stats["unassigned"] >= 5 and (is_connected or api_mode == 'supabase'):
     st.error("🚨 **긴급**: 미배정 현장이 5건 이상입니다. 즉시 배정이 필요합니다!")
-    st.markdown("[현장 목록에서 배정하기](/현장_목록?status=미배정)")
+    st.markdown("[현장 목록에서 배정하기](/2_현장_목록)")
 
 st.markdown("---")
 
@@ -233,7 +233,7 @@ with col_assignment:
     
     # 빠른 액션
     st.markdown("""
-    <a href="/현장_목록" class="nav-btn nav-btn-primary" style="display: inline-block; margin-top: 12px; width: 100%;">
+    <a href="/2_현장_목록" class="nav-btn nav-btn-primary" style="display: inline-block; margin-top: 12px; width: 100%;">
         현장 목록 보기
     </a>
     """, unsafe_allow_html=True)
@@ -348,7 +348,7 @@ with col_directors:
     
     # 빠른 액션
     st.markdown("""
-    <a href="/투입가능인원_상세" class="nav-btn nav-btn-secondary" style="display: inline-block; margin-top: 12px; width: 100%;">
+    <a href="/8_투입가능인원_상세" class="nav-btn nav-btn-secondary" style="display: inline-block; margin-top: 12px; width: 100%;">
         소장 상세 보기
     </a>
     """, unsafe_allow_html=True)
@@ -451,7 +451,7 @@ with col_sites:
     
     # 빠른 액션
     st.markdown("""
-    <a href="/현장등록" class="nav-btn nav-btn-success" style="display: inline-block; margin-top: 12px; width: 100%;">
+    <a href="/3_현장등록" class="nav-btn nav-btn-success" style="display: inline-block; margin-top: 12px; width: 100%;">
         새 현장 등록
     </a>
     """, unsafe_allow_html=True)
@@ -522,19 +522,19 @@ st.markdown("### ⚡ 빠른 액션")
 
 st.markdown("""
 <div class="quick-actions">
-    <a href="/현장등록" class="quick-action-btn">
+    <a href="/3_현장등록" class="quick-action-btn">
         <span class="quick-action-icon">🏗️</span>
         <span class="quick-action-text">현장 등록</span>
     </a>
-    <a href="/자격증등록" class="quick-action-btn">
+    <a href="/4_자격증등록" class="quick-action-btn">
         <span class="quick-action-icon">📜</span>
         <span class="quick-action-text">자격증 등록</span>
     </a>
-    <a href="/현장_목록" class="quick-action-btn">
+    <a href="/2_현장_목록" class="quick-action-btn">
         <span class="quick-action-icon">📋</span>
         <span class="quick-action-text">현장 목록</span>
     </a>
-    <a href="/투입가능인원_상세" class="quick-action-btn">
+    <a href="/8_투입가능인원_상세" class="quick-action-btn">
         <span class="quick-action-icon">👷</span>
         <span class="quick-action-text">인원 상세</span>
     </a>
